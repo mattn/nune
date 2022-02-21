@@ -29,6 +29,64 @@ func Cast[T nune.Number, V nune.Number](t Tensor[V]) Tensor[T] {
 	}
 }
 
+// Copy copies the Tensor and its underlying data.
+func (t Tensor[T]) Copy() Tensor[T] {
+	if t.Err != nil {
+		return Tensor[T]{
+			Err: t.Err,
+		}
+	}
+
+	return Tensor[T]{
+		data: slices.Copy(t.data),
+		shape: slices.Copy(t.shape),
+		strides: slices.Copy(t.strides),
+	}
+}
+
+// Reshape modifies the Tensor's indexing scheme.
+func (t Tensor[T]) Reshape(shape ...int) Tensor[T] {
+	if t.Err != nil {
+		return Tensor[T]{
+			Err: t.Err,
+		}
+	}
+
+	if len(shape) == 0 && t.Numel() <= 1 {
+		return Tensor[T]{
+			data: t.data,
+		}
+	} else {
+		err := verifyGoodShape(shape...)
+		if err != nil {
+			if nune.EnvConfig.Interactive {
+				panic(err)
+			} else {
+				return Tensor[T]{
+					Err: err,
+				}
+			}
+		}
+
+		err = verifyArgsBounds(len(shape), t.Rank()-1)
+		if err != nil {
+			if nune.EnvConfig.Interactive {
+				panic(err)
+			} else {
+				return Tensor[T]{
+					Err: err,
+				}
+			}
+		}
+
+		return Tensor[T]{
+			data: t.data,
+			shape: slices.Copy(shape),
+			strides: configStrides(shape),
+		}
+	}
+}
+
 // Index returns a view over an index of the Tensor.
 // Multiple indices can be provided at the same time.
 func (t Tensor[T]) Index(indices ...int) Tensor[T] {
@@ -110,4 +168,17 @@ func (t Tensor[T]) Slice(start, end int) Tensor[T] {
 		shape:   shape,
 		strides: slices.Copy(t.strides),
 	}
+}
+
+// Reverse reverses the order of the elements of the Tensor.
+func (t Tensor[T]) Reverse() Tensor[T] {
+	if t.Err != nil {
+		return t
+	}
+	
+	for i, j := 0, t.Numel()-1; i < j; i, j = i+1, j-1 {
+		t.data[i], t.data[j] = t.data[j], t.data[i]
+	}
+
+	return t
 }
