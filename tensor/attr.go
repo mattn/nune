@@ -10,38 +10,38 @@ import (
 
 // Ravel returns a copy of the Tensor's data buffer.
 func (t Tensor[T]) Ravel() []T {
-	return t.dispatch.Load()
+	return slices.Copy(t.data)
 }
 
 // Numel returns the number of elements in the Tensor's data buffer.
 func (t Tensor[T]) Numel() int {
-	return slices.Prod(t.layout.Shape())
+	return len(t.data)
 }
 
 // Rank returns the Tensor's rank
 // (the number of axes in the Tensor's shape).
 func (t Tensor[T]) Rank() int {
-	return len(t.layout.Shape())
+	return len(t.shape)
 }
 
 // Shape returns a copy of the Tensor's shape.
 func (t Tensor[T]) Shape() []int {
-	return slices.Copy(t.layout.Shape())
+	return slices.Copy(t.shape)
 }
 
 // Strides returns a copy of the Tensor's strides.
 func (t Tensor[T]) Strides() []int {
-	return slices.Copy(t.layout.Strides())
+	return slices.Copy(t.strides)
 }
 
 // Size returns the Tensor's number of dimensions at
 // the given axis.
 // Panic if axis is out of (0, rank) bounds.
 func (t Tensor[T]) Size(axis int) int {
-	err := verifyAxisBounds(axis, t.Rank())
+	err := verifyAxisBounds(axis, len(t.shape))
 	if err != nil {
 		panic(err)
 	}
 
-	return t.Shape()[axis]
+	return t.shape[axis]
 }

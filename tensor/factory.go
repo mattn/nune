@@ -9,26 +9,8 @@ import (
 	"reflect"
 
 	"github.com/vorduin/nune"
-	"github.com/vorduin/nune/tensor/dispatch"
-	"github.com/vorduin/nune/tensor/layout"
 	"github.com/vorduin/slices"
 )
-
-// newDispatch returns a new CPD holding to the given data.
-func newDispatch[T nune.Number](data []T) *dispatch.CPD[T] {
-	disp := new(dispatch.CPD[T])
-	disp.Dump(data)
-
-	return disp
-}
-
-// newLayout returns a new Dense layout configured to the given shape.
-func newLayout(shape []int) *layout.Dense {
-	lay := new(layout.Dense)
-	lay.Configure(shape)
-
-	return lay
-}
 
 // From returns a Tensor from the given backing - be it a numeric type,
 // a sequence, or nested sequences - with the corresponding shape.
@@ -57,14 +39,14 @@ func From[T nune.Number](b any) Tensor[T] {
 		}
 
 		return Tensor[T]{
-			dispatch: newDispatch(d),
-			layout:   newLayout(s),
+			data: d,
+			shape: s,
+			strides: configStrides(s),
 		}
 	default:
 		if anyIsNumeric(b) {
 			return Tensor[T]{
-				dispatch: newDispatch(anyToNumeric[T](b)),
-				layout:   newLayout(nil),
+				data: anyToNumeric[T](b),
 			}
 		} else if c, ok := anyToTensor[T](b); ok {
 			return c
@@ -100,8 +82,9 @@ func Full[T nune.Number](x T, shape []int) Tensor[T] {
 	}
 
 	return Tensor[T]{
-		dispatch: newDispatch(data),
-		layout:   newLayout(slices.Copy(shape)),
+		data: data,
+		shape: slices.Copy(shape),
+		strides: configStrides(shape),
 	}
 }
 
@@ -140,7 +123,8 @@ func Range[T nune.Number](start, end, step int) Tensor[T] {
 	}
 
 	return Tensor[T]{
-		dispatch: newDispatch(rng),
-		layout:   newLayout([]int{len(rng)}),
+		data: rng,
+		shape: []int{len(rng)},
+		strides: configStrides([]int{len(rng)}),
 	}
 }

@@ -4,10 +4,20 @@
 
 package tensor
 
-func Prod(s []int) int {
-	p := 1
-	for i := 0; i < len(s); i++ {
-		p *= s[i]
+import "github.com/vorduin/slices"
+
+// configStrides returns the corresponding strides to the given shape.
+func configStrides(shape []int) []int {
+	if len(shape) != 0 {
+		strides := slices.WithLen[int](len(shape))
+		strides[0] = slices.Prod(shape[1:])
+
+		for i := 1; i < len(shape); i++ {
+			strides[i] = strides[i-1] / shape[i]
+		}
+
+		return strides
 	}
-	return p
+
+	return nil
 }

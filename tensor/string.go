@@ -27,7 +27,7 @@ func fmtTensor[T nune.Number](t Tensor[T], s fmtState) string {
 	var b strings.Builder
 
 	if t.Rank() == 0 {
-		b.WriteString(fmtNum(t.dispatch.Index(0), s))
+		b.WriteString(fmtNum(t.data[0], s))
 	} else {
 		b.WriteString("[")
 
@@ -146,9 +146,9 @@ func cfgPad(s string) int {
 // cfgWidth configures the numeric types' width from a given Tensor.
 func cfgWidth[T nune.Number](t Tensor[T]) int {
 	// find min and max numbers
-	var min, max T = t.dispatch.Index(0), t.dispatch.Index(0)
+	var min, max T = t.data[0], t.data[0]
 	for i := 1; i < t.Numel(); i++ {
-		v := t.dispatch.Index(i)
+		v := t.data[i]
 		if v < min {
 			min = v
 		} else if v > max {
