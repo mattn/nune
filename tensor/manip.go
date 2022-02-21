@@ -1,6 +1,6 @@
 // Copyright © The Nune Author. All rights reserved.
-// Use of this source logic, code, or documentation is governed by
-// an MIT-style license that can be found in the LICENSE file.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 package tensor
 
@@ -175,7 +175,7 @@ func (t Tensor[T]) Reverse() Tensor[T] {
 	if t.Err != nil {
 		return t
 	}
-	
+
 	for i, j := 0, t.Numel()-1; i < j; i, j = i+1, j-1 {
 		t.data[i], t.data[j] = t.data[j], t.data[i]
 	}

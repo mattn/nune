@@ -1,15 +1,16 @@
 // Copyright © The Nune Author. All rights reserved.
-// Use of this source logic, code, or documentation is governed by
-// an MIT-style license that can be found in the LICENSE file.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
 
 package tensor
 
 import (
 	"fmt"
-	"github.com/vorduin/nune"
 	"math"
 	"reflect"
 	"strings"
+
+	"github.com/vorduin/nune"
 )
 
 // String returns a string representation of the Tensor.
