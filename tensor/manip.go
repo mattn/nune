@@ -67,8 +67,8 @@ func (t Tensor[T]) Index(indices ...int) Tensor[T] {
 	}
 
 	return Tensor[T]{
-		data: t.data[offset : offset+t.strides[len(indices)-1]],
-		shape: slices.Copy(t.shape[1:]),
+		data:    t.data[offset : offset+t.strides[len(indices)-1]],
+		shape:   slices.Copy(t.shape[1:]),
 		strides: slices.Copy(t.strides[1:]),
 	}
 }
@@ -106,8 +106,8 @@ func (t Tensor[T]) Slice(start, end int) Tensor[T] {
 	copy(shape[1:], t.shape[1:])
 
 	return Tensor[T]{
-		data: t.data[start*t.strides[0] : end*t.strides[0]],
-		shape: shape,
+		data:    t.data[start*t.strides[0] : end*t.strides[0]],
+		shape:   shape,
 		strides: slices.Copy(t.strides),
 	}
 }

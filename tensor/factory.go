@@ -39,8 +39,8 @@ func From[T nune.Number](b any) Tensor[T] {
 		}
 
 		return Tensor[T]{
-			data: d,
-			shape: s,
+			data:    d,
+			shape:   s,
 			strides: configStrides(s),
 		}
 	default:
@@ -82,8 +82,8 @@ func Full[T nune.Number](x T, shape []int) Tensor[T] {
 	}
 
 	return Tensor[T]{
-		data: data,
-		shape: slices.Copy(shape),
+		data:    data,
+		shape:   slices.Copy(shape),
 		strides: configStrides(shape),
 	}
 }
@@ -123,8 +123,8 @@ func Range[T nune.Number](start, end, step int) Tensor[T] {
 	}
 
 	return Tensor[T]{
-		data: rng,
-		shape: []int{len(rng)},
+		data:    rng,
+		shape:   []int{len(rng)},
 		strides: configStrides([]int{len(rng)}),
 	}
 }

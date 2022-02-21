@@ -4,12 +4,12 @@
 
 package tensor
 
-import(
+import (
 	"fmt"
-	"strings"
+	"github.com/vorduin/nune"
 	"math"
 	"reflect"
-	"github.com/vorduin/nune"
+	"strings"
 )
 
 // String returns a string representation of the Tensor.

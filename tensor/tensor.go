@@ -10,7 +10,7 @@ import (
 
 // A Tensor is a generic, n-dimensional numerical type.
 type Tensor[T nune.Number] struct {
-	data []T // the tensor's data buffer
+	data           []T   // the tensor's data buffer
 	shape, strides []int // the layout that holds the Tensor's indexing scheme
-	Err      error                  // holds the corresponding error when a Tensor operation fails
+	Err            error // holds the corresponding error when a Tensor operation fails
 }
