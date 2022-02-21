@@ -2,6 +2,6 @@
 // Use of this source logic, code, or documentation is governed by
 // an MIT-style license that can be found in the LICENSE file.
 
-// Package layout defines the different Layout implementations
+// Package layout defines the different Indexer implementations
 // that dictate a tensor's indexing scheme.
 package layout
