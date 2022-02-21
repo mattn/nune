@@ -30,6 +30,10 @@ var (
 	// than it should.
 	ErrArgsBounds = errors.New("nune/tensor: received more arguments than allowed")
 
+	// ErrAxisBounds occurs when an axis is out of
+	// (0, rank) bounds.
+	ErrAxisBounds = errors.New("nune/tensor: axis out of bounds")
+
 	// ErrStorageDump occurs when the Assign method fails to dump
 	// the given data to the Tensor's storage.
 	ErrStorageDump = errors.New("nune/tensor: could not dump data buffer to storage")
@@ -90,6 +94,15 @@ func verifyGoodInterval(start, end int, limits ...[2]int) error {
 func verifyArgsBounds(nargs, max int) error {
 	if nargs > max {
 		return ErrArgsBounds
+	}
+	return nil
+}
+
+// verifyAxisBounds makes sure an axis is strictly positive
+// and is less than the Tensor's rank.
+func verifyAxisBounds(axis, rank int) error {
+	if axis < 0 || axis > rank {
+		return ErrAxisBounds
 	}
 	return nil
 }

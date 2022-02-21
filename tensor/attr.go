@@ -36,9 +36,12 @@ func (t Tensor[T]) Strides() []int {
 
 // Size returns the Tensor's number of dimensions at
 // the given axis.
-// Panics if axis is out of (0, rank) bounds.
+// Panic if axis is out of (0, rank) bounds.
 func (t Tensor[T]) Size(axis int) int {
-	assertAxisBounds(axis, t.Rank())
+	err := verifyAxisBounds(axis, t.Rank())
+	if err != nil {
+		panic(err)
+	}
 
 	return t.Shape()[axis]
 }

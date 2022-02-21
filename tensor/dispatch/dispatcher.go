@@ -25,9 +25,18 @@ type Dispatcher[T nune.Number] interface {
 
 	// Slice returns a slice of the given bounds from
 	// the Tensor's 1-dimensional data buffer.
-	Slice(start, end int) []T
+	Slice(start, end int) Dispatcher[T]
 
 	// SetSlice sets the slice from the given bounds of
 	// the Tensor's 1-dimensional data buffer to the given slice.
 	SetSlice(start, end int, s []T)
+
+	// Copy copies the underlying data of the Dispatcher into a new
+	// Dispatcher and returns it.
+	Copy() Dispatcher[T]
+
+	// Cast returns a pointer to an implementation of a new Dispatcher
+	// casted as any, with the underlying data casted to
+	// the type of the given value.
+	Cast(value any) any
 }

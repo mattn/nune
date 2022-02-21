@@ -22,4 +22,10 @@ type Indexer interface {
 
 	// SetStrides modifies the strides of the Tensor.
 	SetStrides(strides []int)
+
+	// Index returns a new layout configured to having indexed the Tensor.
+	Index(indices ...int) Indexer
+
+	// Slice returns a new layout configured to having sliced the Tensor.
+	Slice(start, end int) Indexer
 }

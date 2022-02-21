@@ -13,7 +13,7 @@ type Dense struct {
 }
 
 // Configure takes a shape and configures the corresponding strides.
-func (d *Dense) Configure(shape []int) {
+func (d Dense) Configure(shape []int) {
 	d.shape = shape
 
 	if len(shape) != 0 {
@@ -29,21 +29,41 @@ func (d *Dense) Configure(shape []int) {
 }
 
 // Shape returns the layout's strided shape.
-func (d *Dense) Shape() []int {
+func (d Dense) Shape() []int {
 	return d.shape
 }
 
 // SetShape modifies the layout's strided shape to the given shape.
-func (d *Dense) SetShape(shape []int) {
+func (d Dense) SetShape(shape []int) {
 	d.shape = shape
 }
 
 // Strides returns the layout's strides.
-func (d *Dense) Strides() []int {
+func (d Dense) Strides() []int {
 	return d.strides
 }
 
 // SetStrides modifies the layout's strides to the given strides.
-func (d *Dense) SetStrides(strides []int) {
+func (d Dense) SetStrides(strides []int) {
 	d.strides = strides
+}
+
+func (d Dense) Index(indices ...int) Indexer {
+	den := new(Dense)
+	shape := slices.Copy(d.shape[len(indices):])
+	den.Configure(shape)
+
+	return any(den).(Indexer)
+}
+
+func (d Dense) Slice(start, end int) Indexer {
+	den := new(Dense)
+
+	shape := slices.WithLen[int](len(d.shape))
+	shape[0] = end - start
+	copy(shape[1:], d.shape[1:])
+
+	den.Configure(shape)
+
+	return any(den).(Indexer)
 }
