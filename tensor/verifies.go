@@ -16,6 +16,10 @@ var (
 	// is opposite to the inverval's order.
 	ErrBadStep = errors.New("nune/tensor: received a bad step size")
 
+	// ErrNotBroadable occurs when a Tensor could not be broadcast
+	// to a provided shape.
+	ErrNotBroadable = errors.New("nune/tensor: could not broadcast tensor to shape")
+
 	// ErrBadInterval occurs when a null interval, or a descending
 	// interval, or an interval that doesn't fall within the allowed limits
 	// is provided to a function like range or slice.

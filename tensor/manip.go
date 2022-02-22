@@ -68,17 +68,6 @@ func (t Tensor[T]) Reshape(shape ...int) Tensor[T] {
 			}
 		}
 
-		err = verifyArgsBounds(len(shape), t.Rank()-1)
-		if err != nil {
-			if nune.EnvConfig.Interactive {
-				panic(err)
-			} else {
-				return Tensor[T]{
-					Err: err,
-				}
-			}
-		}
-
 		return Tensor[T]{
 			data: t.data,
 			shape: slices.Copy(shape),
@@ -167,6 +156,61 @@ func (t Tensor[T]) Slice(start, end int) Tensor[T] {
 		data:    t.data[start*t.strides[0] : end*t.strides[0]],
 		shape:   shape,
 		strides: slices.Copy(t.strides),
+	}
+}
+
+func (t Tensor[T]) Broadcast(shape ...int) Tensor[T] {
+	if t.Err != nil {
+		return t
+	}
+
+	if !t.Broadable(shape...) {
+		if nune.EnvConfig.Interactive {
+			panic(ErrNotBroadable)
+		} else {
+			return Tensor[T]{
+				Err: ErrNotBroadable,
+			}
+		}
+	}
+
+	var expShape []int
+
+	if len(t.shape) < len(shape) {
+		expShape = slices.WithLen[int](len(shape))
+		for i := 0; i < len(shape)-len(t.shape); i++ {
+			expShape[i] = 1
+		}
+		copy(expShape[len(shape)-len(t.shape):], t.shape)
+	} else {
+		expShape = t.shape
+	}
+
+	expStrides := configStrides(expShape)
+	newStrides := configStrides(shape)
+
+	data := slices.WithLen[T](int(slices.Prod(shape)))
+
+	var lastB, lastS int = 1, newStrides[0]
+
+	for i := 0; i < len(shape); i++ {
+		if expShape[i] != shape[i] {
+			for j := 0; j < lastB; j++ {
+				for k := 0; k < len(t.data)/expStrides[i]; k++ {
+					for l := 0; l < shape[i]; l++ {
+						copy(data[j*lastS+k*shape[i]+l*newStrides[i]:j*lastS+k*shape[i]+l*newStrides[i]+newStrides[i]], t.data[k*expStrides[i]:k*expStrides[i]+expStrides[i]])
+					}
+				}
+			}
+			lastB *= shape[i]
+			lastS = newStrides[i]
+		}
+	}
+
+	return Tensor[T]{
+		data: data,
+		shape: slices.Copy(shape),
+		strides: newStrides,
 	}
 }
 

@@ -36,7 +36,7 @@ func (t Tensor[T]) Strides() []int {
 
 // Size returns the Tensor's number of dimensions at
 // the given axis.
-// Panic if axis is out of (0, rank) bounds.
+// Panics if axis is out of (0, rank) bounds.
 func (t Tensor[T]) Size(axis int) int {
 	err := verifyAxisBounds(axis, len(t.shape))
 	if err != nil {
@@ -44,4 +44,38 @@ func (t Tensor[T]) Size(axis int) int {
 	}
 
 	return t.shape[axis]
+}
+
+// Broadable returns whether or not the Tensor can be
+// broadcast to the given shape.
+func (t *Tensor[T]) Broadable(shape ...int) bool {
+	err := verifyGoodShape(shape...)
+	if err != nil {
+		return false
+	}
+
+	err = verifyArgsBounds(len(t.shape), len(shape))
+	if err != nil {
+		return false
+	}
+
+	var s []int
+
+	if len(t.shape) < len(shape) {
+		s = slices.WithLen[int](len(shape))
+		for i := 0; i < len(shape)-len(t.shape); i++ {
+			s[i] = 1
+		}
+		copy(s[len(shape)-len(t.shape):], t.shape)
+	} else {
+		s = t.shape
+	}
+
+	for i := 0; i < len(shape); i++ {
+		if s[i] != shape[i] && s[i] != 1 {
+			return false
+		}
+	}
+
+	return true
 }
