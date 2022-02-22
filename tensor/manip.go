@@ -174,43 +174,44 @@ func (t Tensor[T]) Broadcast(shape ...int) Tensor[T] {
 		}
 	}
 
-	var expShape []int
+	var expandedShape []int
 
 	if len(t.shape) < len(shape) {
-		expShape = slices.WithLen[int](len(shape))
+		expandedShape = slices.WithLen[int](len(shape))
 		for i := 0; i < len(shape)-len(t.shape); i++ {
-			expShape[i] = 1
+			expandedShape[i] = 1
 		}
-		copy(expShape[len(shape)-len(t.shape):], t.shape)
+		copy(expandedShape[len(shape)-len(t.shape):], t.shape)
 	} else {
-		expShape = t.shape
+		expandedShape = t.shape
 	}
 
-	expStrides := configStrides(expShape)
-	newStrides := configStrides(shape)
+	strides := configStrides(shape)
 
 	data := slices.WithLen[T](int(slices.Prod(shape)))
 
-	var lastB, lastS int = 1, newStrides[0]
+	var expansion, stride int = 1, strides[0]
+	for i := 0; i < len(shape) - 1; i++ {
+		if expandedShape[i] != shape[i] {
+			expansion *= shape[i]
+			stride = strides[i]
+		}
+	}
 
-	for i := 0; i < len(shape); i++ {
-		if expShape[i] != shape[i] {
-			for j := 0; j < lastB; j++ {
-				for k := 0; k < len(t.data)/expStrides[i]; k++ {
-					for l := 0; l < shape[i]; l++ {
-						copy(data[j*lastS+k*shape[i]+l*newStrides[i]:j*lastS+k*shape[i]+l*newStrides[i]+newStrides[i]], t.data[k*expStrides[i]:k*expStrides[i]+expStrides[i]])
-					}
-				}
+	for j := 0; j < expansion; j++ { // specifies which part of the expanded parts
+		offset := j * stride 
+		for k := 0; k < len(t.data); k++ { // specifies offset in expansion
+			expOffset := k * shape[len(shape)-1]
+			for l := 0; l < shape[len(shape)-1]; l++ { // specifies index in expansion
+				data[offset+expOffset+l] = t.data[k]
 			}
-			lastB *= shape[i]
-			lastS = newStrides[i]
 		}
 	}
 
 	return Tensor[T]{
 		data: data,
 		shape: slices.Copy(shape),
-		strides: newStrides,
+		strides: strides,
 	}
 }
 
