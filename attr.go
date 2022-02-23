@@ -13,6 +13,16 @@ func (t Tensor[T]) Ravel() []T {
 	return t.data[t.offset:t.offset+t.Numel()]
 }
 
+// Scalar returns the scalar equivalent of a rank 0 Tensor.
+// Panics if the Tensor's rank is not 0.
+func (t Tensor[T]) Scalar() T {
+	if len(t.shape) != 0 {
+		panic("nune: tensor is not rank 0")
+	}
+	
+	return t.data[0]
+}
+
 // Numel returns the number of elements in the Tensor's data buffer.
 func (t Tensor[T]) Numel() int {
 	return int(slices.Prod(t.shape))

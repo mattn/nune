@@ -5,6 +5,8 @@
 package nune
 
 import (
+	"errors"
+
 	"github.com/vorduin/slices"
 )
 
@@ -252,8 +254,70 @@ func (t Tensor[T]) Reverse() Tensor[T] {
 	}
 
 	for i, j := 0, t.Numel()-1; i < j; i, j = i+1, j-1 {
-		t.Ravel()[i], t.Ravel()[j] = t.Ravel()[j], t.Ravel()[i]
+		t.data[t.offset+i], t.data[t.offset+j] = t.data[t.offset+j], t.data[t.offset+i]
 	}
+
+	return t
+}
+
+// Flip reverses the order of the elements of the Tensor
+// along the given axis.
+func (t Tensor[T]) Flip(axis int) Tensor[T] {
+	if t.Err != nil {
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
+	}
+
+	err := verifyAxisBounds(0, len(t.shape))
+	if err != nil {
+		if EnvConfig.Interactive {
+			panic(err)
+		} else {
+			t.Err = err
+			return t
+		}
+	}
+
+	stride := t.stride[axis]
+	for i, j := 0, t.shape[axis]; i < j; i, j = i+1, j-1 {
+		t.data[t.offset+i*stride], t.data[t.offset+j*stride] = t.data[t.offset+j*stride], t.data[t.offset+i*stride]
+	}
+
+	return t
+}
+
+// Repeat repeats the elements of the array n times.
+func (t Tensor[T]) Repeat(n int) Tensor[T] {
+	if t.Err != nil {
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
+	}
+
+	numel := t.Numel()
+	dataBuf := t.Ravel()
+	data := slices.WithLen[T](n * numel)
+	for i := 0; i < n; i++ {
+		copy(data[i*numel:i*numel+numel], dataBuf)
+	}
+
+	shape := slices.WithLen[int](len(t.shape) + 1)
+	stride := slices.WithLen[int](len(t.stride) + 1)
+
+	shape[0] = n
+	copy(shape[1:], t.shape)
+	stride[0] = n * t.stride[0]
+	copy(stride[1:], t.stride)
+
+	t.data = data
+	t.shape = shape
+	t.stride = stride
+	t.offset = 0
 
 	return t
 }
@@ -295,6 +359,171 @@ func (t Tensor[T]) Permute(axes ...int) Tensor[T] {
 		t.shape[i] = shapeCopy[axis]
 		t.stride[i] = strideCopy[axis]
 	}
+
+	return t
+}
+
+// Cat concatenates the other Tensor to this Tensor along the given axis.
+func (t Tensor[T]) Cat(other Tensor[T], axis int) Tensor[T] {
+	if t.Err != nil {
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
+	}
+
+	if other.Err != nil {
+		if EnvConfig.Interactive {
+			panic("nune: could not concatenate the two tensors")
+		} else {
+			t.Err = errors.New("nune: could not concatenate the two tensors")
+			return t
+		}
+	}
+
+	err := verifyAxisBounds(axis, len(t.shape))
+	if err != nil {
+		if EnvConfig.Interactive {
+			panic(err)
+		} else {
+			t.Err = err
+			return t
+		}
+	}
+
+	if !slices.Equal(t.shape[:axis], other.shape[:axis]) || !slices.Equal(t.shape[axis+1:], other.shape[axis+1:]) {
+		if EnvConfig.Interactive {
+			panic("nune: tensors' shapes do not allow concatenating them")
+		} else {
+			t.Err = errors.New(("nune: tensors' shapes do not allow concatenating them"))
+			return t
+		}
+	}
+
+	data := slices.WithLen[T](t.Numel() + other.Numel())
+	copy(data[:t.Numel()], t.Ravel())
+	copy(data[t.Numel():], other.Ravel())
+
+	t.shape[axis] += other.shape[axis]
+	t.stride = configStride(t.shape)
+	t.offset = 0
+
+	return t
+}
+
+// Stack stacks the other Tensor to this Tensor along a new axis.
+func (t Tensor[T]) Stack(other Tensor[T], axis int) Tensor[T] {
+	if t.Err != nil {
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
+	}
+
+	if other.Err != nil {
+		if EnvConfig.Interactive {
+			panic("nune: could not concatenate the two tensors")
+		} else {
+			t.Err = errors.New("nune: could not concatenate the two tensors")
+			return t
+		}
+	}
+
+	err := verifyAxisBounds(axis, len(t.shape))
+	if err != nil {
+		if EnvConfig.Interactive {
+			panic(err)
+		} else {
+			t.Err = err
+			return t
+		}
+	}
+
+	t = t.Unsqueeze(axis)
+	other = other.Unsqueeze(axis)
+	t = t.Cat(other, axis)
+	other = other.Squeeze(axis)
+
+	return t
+}
+
+// Squeeze removes an axis of dimensions 1 from the Tensor's shape.
+func (t Tensor[T]) Squeeze(axis int) Tensor[T] {
+	if t.Err != nil {
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
+	}
+
+	err := verifyAxisBounds(axis, len(t.shape))
+	if err != nil {
+		if EnvConfig.Interactive {
+			panic(err)
+		} else {
+			t.Err = err
+			return t
+		}
+	}
+
+	if t.shape[axis] > 1 {
+		if EnvConfig.Interactive {
+			panic("nune: tensor axis dimensions greater than 1")
+		} else {
+			t.Err = errors.New("nune: tensor axis dimensions greater than 1")
+			return t
+		}
+	}
+
+	newshape := slices.WithLen[int](len(t.shape)-1)
+	newstride := slices.WithLen[int](len(t.stride)-1)
+
+	copy(newshape[:axis], t.shape[:axis])
+	copy(newshape[axis:], t.shape[axis+1:])
+	copy(newstride[:axis], t.stride[:axis])
+	copy(newstride[axis:], t.stride[axis+1:])
+
+	t.shape = newshape
+	t.stride = newstride
+
+	return t
+}
+
+// Unsqueeze adds an axis of dimensions 1 to the Tensor's shape.
+func (t Tensor[T]) Unsqueeze(axis int) Tensor[T] {
+	if t.Err != nil {
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
+	}
+
+	err := verifyAxisBounds(axis, len(t.shape))
+	if err != nil {
+		if EnvConfig.Interactive {
+			panic(err)
+		} else {
+			t.Err = err
+			return t
+		}
+	}
+
+	newshape := slices.WithLen[int](len(t.shape)+1)
+	newstride := slices.WithLen[int](len(t.stride)+1)
+
+	copy(newshape[:axis], t.shape[:axis])
+	copy(newstride[:axis], t.stride[:axis])
+	newshape[axis] = 1
+	newstride[axis] = t.stride[axis]
+	copy(newshape[axis+1:], t.shape[axis:])
+	copy(newstride[axis+1:], t.stride[axis:])
+
+	t.shape = newshape
+	t.stride = newstride
 
 	return t
 }

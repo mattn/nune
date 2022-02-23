@@ -61,7 +61,7 @@ func From[T Number](b any) Tensor[T] {
 	}
 }
 
-// Full returns a Tensor filled with the given value and
+// Full returns a Tensor full with the given value and
 // satisfying the given shape.
 func Full[T Number](x T, shape []int) Tensor[T] {
 	err := verifyGoodShape(shape...)
@@ -87,14 +87,54 @@ func Full[T Number](x T, shape []int) Tensor[T] {
 	}
 }
 
-// Zeros returns a Tensor filled with zeros and satisfying the given shape.
-func Zeros[T Number](shape ...int) Tensor[T] {
-	return Full(T(0), shape)
+// FullLike returns a Tensor full with the given value and
+// resembling the other Tensor's shape.
+func FullLike[T Number, U Number](x T, other Tensor[U]) Tensor[T] {
+	data := slices.WithLen[T](other.Numel())
+	for i := 0; i < len(data); i++ {
+		data[i] = T(x)
+	}
+
+	return Tensor[T]{
+		data:   data,
+		shape:  slices.Copy(other.shape),
+		stride: configStride(other.shape),
+	}
 }
 
-// Ones returns a Tensor filled with ones and satisfying the given shape.
+// Zeros returns a Tensor full with zeros and satisfying the given shape.
+func Zeros[T Number](shape ...int) Tensor[T] {
+	err := verifyGoodShape(shape...)
+	if err != nil {
+		if EnvConfig.Interactive {
+			panic(err)
+		} else {
+			return Tensor[T]{
+				Err: err,
+			}
+		}
+	}
+
+	return Tensor[T]{
+		data: slices.WithLen[T](int(slices.Prod(shape))),
+		shape: slices.Copy(shape),
+		stride: configStride(shape),
+	}
+}
+
+// Ones returns a Tensor full with ones and satisfying the given shape.
 func Ones[T Number](shape ...int) Tensor[T] {
 	return Full(T(1), shape)
+}
+
+// ZerosLike returns a Tensor full with zeros and resembling the other
+// Tensor's shape.
+func ZerosLike[T Number, U Number](other Tensor[U]) Tensor[T] {
+	return Tensor[T]{
+		data: slices.WithLen[T](other.Numel()),
+		shape: slices.Copy(other.shape),
+		stride: configStride(other.shape),
+	}
 }
 
 // Range returns a rank 1 Tensor on the interval [start, end),
@@ -125,5 +165,14 @@ func Range[T Number](start, end, step int) Tensor[T] {
 		data:   rng,
 		shape:  []int{len(rng)},
 		stride: configStride([]int{len(rng)}),
+	}
+}
+
+// FromBuffer returns a Tensor with the given buffer set as its data buffer.
+func FromBuffer[T Number](buf []T) Tensor[T] {
+	return Tensor[T]{
+		data: buf,
+		shape: []int{len(buf)},
+		stride: configStride([]int{len(buf)}),
 	}
 }
