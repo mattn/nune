@@ -10,8 +10,8 @@ import (
 
 // EnvConfig holds Nune's environment configuration.
 var EnvConfig = struct {
-	Interactive bool
-	NumCPU      int
+	Interactive bool // whether the environment is interactive (panics) or not
+	NumCPU      int // the number of CPUs to use
 }{
 	Interactive: false,
 	NumCPU:      runtime.NumCPU(),

@@ -8,14 +8,14 @@ import (
 	"github.com/vorduin/slices"
 )
 
-// Ravel returns a copy of the Tensor's data buffer.
+// Ravel returns the Tensor's view in its data buffer.
 func (t Tensor[T]) Ravel() []T {
-	return slices.Copy(t.data)
+	return t.data[t.offset:t.offset+t.Numel()]
 }
 
 // Numel returns the number of elements in the Tensor's data buffer.
 func (t Tensor[T]) Numel() int {
-	return len(t.data)
+	return int(slices.Prod(t.shape))
 }
 
 // Rank returns the Tensor's rank
@@ -29,9 +29,14 @@ func (t Tensor[T]) Shape() []int {
 	return slices.Copy(t.shape)
 }
 
-// Strides returns a copy of the Tensor's strides.
-func (t Tensor[T]) Strides() []int {
-	return slices.Copy(t.strides)
+// Stride returns a copy of the Tensor's stride scheme.
+func (t Tensor[T]) Stride() []int {
+	return slices.Copy(t.stride)
+}
+
+// Stride returns the Tensor's view offset in its data buffer.
+func (t Tensor[T]) Offset() int {
+	return t.offset
 }
 
 // Size returns the Tensor's number of dimensions at

@@ -17,44 +17,44 @@ func Cast[T nune.Number, V nune.Number](t Tensor[V]) Tensor[T] {
 		}
 	}
 
+	dataBuf := t.Ravel()
 	c := slices.WithLen[T](t.Numel())
 	for i := 0; i < len(c); i++ {
-		c[i] = T(t.data[i])
+		c[i] = T(dataBuf[i])
 	}
 
 	return Tensor[T]{
-		data:    c,
+		data:  c,
 		shape:   t.shape,
-		strides: t.strides,
+		stride: t.stride,
+		offset: t.offset,
 	}
 }
 
-// Copy copies the Tensor and its underlying data.
-func (t Tensor[T]) Copy() Tensor[T] {
+// Clone clones the Tensor and its underlying view into its data buffer.
+func (t Tensor[T]) Clone() Tensor[T] {
 	if t.Err != nil {
-		return Tensor[T]{
-			Err: t.Err,
-		}
+		return t
 	}
 
 	return Tensor[T]{
-		data: slices.Copy(t.data),
+		data: slices.Copy(t.Ravel()),
 		shape: slices.Copy(t.shape),
-		strides: slices.Copy(t.strides),
+		stride: slices.Copy(t.stride),
 	}
 }
 
 // Reshape modifies the Tensor's indexing scheme.
+// TODO: Check stride
 func (t Tensor[T]) Reshape(shape ...int) Tensor[T] {
 	if t.Err != nil {
-		return Tensor[T]{
-			Err: t.Err,
-		}
+		return t
 	}
 
 	if len(shape) == 0 && t.Numel() <= 1 {
 		return Tensor[T]{
 			data: t.data,
+			offset: t.offset,
 		}
 	} else {
 		err := verifyGoodShape(shape...)
@@ -62,16 +62,16 @@ func (t Tensor[T]) Reshape(shape ...int) Tensor[T] {
 			if nune.EnvConfig.Interactive {
 				panic(err)
 			} else {
-				return Tensor[T]{
-					Err: err,
-				}
+				t.Err = err
+				return t
 			}
 		}
 
 		return Tensor[T]{
 			data: t.data,
 			shape: slices.Copy(shape),
-			strides: configStrides(shape),
+			stride: configStride(shape),
+			offset: t.offset,
 		}
 	}
 }
@@ -88,9 +88,8 @@ func (t Tensor[T]) Index(indices ...int) Tensor[T] {
 		if nune.EnvConfig.Interactive {
 			panic(err)
 		} else {
-			return Tensor[T]{
-				Err: err,
-			}
+			t.Err = err
+			return t
 		}
 	}
 
@@ -100,23 +99,23 @@ func (t Tensor[T]) Index(indices ...int) Tensor[T] {
 			if nune.EnvConfig.Interactive {
 				panic(err)
 			} else {
-				return Tensor[T]{
-					Err: err,
-				}
+				t.Err = err
+				return t
 			}
 		}
 	}
 
-	var offset int
+	offset := t.offset
 
 	for i, idx := range indices {
-		offset += idx * t.strides[i]
+		offset += idx * t.stride[i]
 	}
 
 	return Tensor[T]{
-		data:    t.data[offset : offset+t.strides[len(indices)-1]],
-		shape:   slices.Copy(t.shape[1:]),
-		strides: slices.Copy(t.strides[1:]),
+		data:    t.data,
+		shape:   slices.Copy(t.shape[len(indices):]),
+		stride: slices.Copy(t.stride[len(indices):]),
+		offset: offset,
 	}
 }
 
@@ -131,9 +130,8 @@ func (t Tensor[T]) Slice(start, end int) Tensor[T] {
 		if nune.EnvConfig.Interactive {
 			panic(err)
 		} else {
-			return Tensor[T]{
-				Err: err,
-			}
+			t.Err = err
+			return t
 		}
 	}
 
@@ -142,9 +140,8 @@ func (t Tensor[T]) Slice(start, end int) Tensor[T] {
 		if nune.EnvConfig.Interactive {
 			panic(err)
 		} else {
-			return Tensor[T]{
-				Err: err,
-			}
+			t.Err = err
+			return t
 		}
 	}
 
@@ -153,12 +150,14 @@ func (t Tensor[T]) Slice(start, end int) Tensor[T] {
 	copy(shape[1:], t.shape[1:])
 
 	return Tensor[T]{
-		data:    t.data[start*t.strides[0] : end*t.strides[0]],
+		data:    t.data,
 		shape:   shape,
-		strides: slices.Copy(t.strides),
+		stride: slices.Copy(t.stride),
+		offset: t.offset+start*t.stride[0],
 	}
 }
 
+// Broadcast broadcasts the Tensor to the given shape.
 func (t Tensor[T]) Broadcast(shape ...int) Tensor[T] {
 	if t.Err != nil {
 		return t
@@ -168,9 +167,8 @@ func (t Tensor[T]) Broadcast(shape ...int) Tensor[T] {
 		if nune.EnvConfig.Interactive {
 			panic(ErrNotBroadable)
 		} else {
-			return Tensor[T]{
-				Err: ErrNotBroadable,
-			}
+			t.Err = ErrNotBroadable
+			return t
 		}
 	}
 
@@ -186,32 +184,37 @@ func (t Tensor[T]) Broadcast(shape ...int) Tensor[T] {
 		expandedShape = t.shape
 	}
 
-	strides := configStrides(shape)
+	expandedStride := configStride(expandedShape)
+	newStride := configStride(shape)
 
 	data := slices.WithLen[T](int(slices.Prod(shape)))
 
-	var expansion, stride int = 1, strides[0]
-	for i := 0; i < len(shape) - 1; i++ {
-		if expandedShape[i] != shape[i] {
-			expansion *= shape[i]
-			stride = strides[i]
-		}
-	}
+	var expansion, stride int = 1, newStride[0]
 
-	for j := 0; j < expansion; j++ { // specifies which part of the expanded parts
-		offset := j * stride 
-		for k := 0; k < len(t.data); k++ { // specifies offset in expansion
-			expOffset := k * shape[len(shape)-1]
-			for l := 0; l < shape[len(shape)-1]; l++ { // specifies index in expansion
-				data[offset+expOffset+l] = t.data[k]
+	// This is around 20% slower on average the the shortened version
+	// I also came up with, but this one generalizes correctly so...
+	for axis := 0; axis < len(shape); axis++ {
+		if expandedShape[axis] != shape[axis] {
+			for i := 0; i < expansion; i++ {
+				for j := 0; j < t.Numel()/expandedStride[axis]; j++ {
+					for k := 0; k < shape[axis]; k++ {
+						dstIdx := i * stride + j * shape[axis] + k * newStride[axis]
+						srcIdx := j * expandedStride[axis]
+
+						copy(data[dstIdx:dstIdx+newStride[axis]], t.Ravel()[srcIdx:srcIdx+expandedStride[axis]])
+					}
+				}
 			}
+
+			expansion *= shape[axis]
+			stride = newStride[axis]
 		}
 	}
 
 	return Tensor[T]{
 		data: data,
 		shape: slices.Copy(shape),
-		strides: strides,
+		stride: newStride,
 	}
 }
 
@@ -222,7 +225,44 @@ func (t Tensor[T]) Reverse() Tensor[T] {
 	}
 
 	for i, j := 0, t.Numel()-1; i < j; i, j = i+1, j-1 {
-		t.data[i], t.data[j] = t.data[j], t.data[i]
+		t.Ravel()[i], t.Ravel()[j] = t.Ravel()[j], t.Ravel()[i]
+	}
+
+	return t
+}
+
+// Permute permutes the Tensor's axes without changing the data. 
+func (t Tensor[T]) Permute(axes ...int) Tensor[T] {
+	if t.Err != nil {
+		return t
+	}
+
+	err := verifyArgsBounds(len(axes), len(t.shape))
+	if err != nil {
+		if nune.EnvConfig.Interactive {
+			panic(err)
+		} else {
+			t.Err = err
+			return t
+		}
+	}
+
+	shapeCopy := slices.Copy(t.shape)
+	strideCopy := slices.Copy(t.stride)
+
+	for i, axis := range axes {
+		err := verifyAxisBounds(axis, len(t.shape))
+		if err != nil {
+			if nune.EnvConfig.Interactive {
+				panic(err)
+			} else {
+				t.Err = err
+				return t
+			}
+		}
+
+		t.shape[i] = shapeCopy[axis]
+		t.stride[i] = strideCopy[axis]
 	}
 
 	return t
