@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package tensor
+package nune
 
 import "errors"
 
@@ -10,37 +10,37 @@ import "errors"
 var (
 	// ErrBadShape occurs when a shape is nil or a has axes whose
 	// dimensions are less than or equal to zero.
-	ErrBadShape = errors.New("nune/tensor: received a bad shape")
+	ErrBadShape = errors.New("nune: received a bad shape")
 
 	// ErrBadStep occurs when a step size is null or
 	// is opposite to the inverval's order.
-	ErrBadStep = errors.New("nune/tensor: received a bad step size")
+	ErrBadStep = errors.New("nune: received a bad step size")
 
 	// ErrNotBroadable occurs when a Tensor could not be broadcast
 	// to a provided shape.
-	ErrNotBroadable = errors.New("nune/tensor: could not broadcast tensor to shape")
+	ErrNotBroadable = errors.New("nune: could not broadcast tensor to shape")
 
 	// ErrBadInterval occurs when a null interval, or a descending
 	// interval, or an interval that doesn't fall within the allowed limits
 	// is provided to a function like range or slice.
-	ErrBadInterval = errors.New("nune/tensor: received a bad interval")
+	ErrBadInterval = errors.New("nune: received a bad interval")
 
 	// ErrUnwrapBacking occurs when a backing could not be
 	// unwrapped into a 1-dimensional numeric buffer in order
 	// to create a Tensor.
-	ErrUnwrapBacking = errors.New("nune/tensor: could not unwrap backing to Tensor")
+	ErrUnwrapBacking = errors.New("nune: could not unwrap backing to Tensor")
 
 	// ErrArgsBounds occurs when a function receives more arguments
 	// than it should.
-	ErrArgsBounds = errors.New("nune/tensor: received more arguments than allowed")
+	ErrArgsBounds = errors.New("nune: received more arguments than allowed")
 
 	// ErrAxisBounds occurs when an axis is out of
 	// (0, rank) bounds.
-	ErrAxisBounds = errors.New("nune/tensor: axis out of bounds")
+	ErrAxisBounds = errors.New("nune: axis out of bounds")
 
 	// ErrStorageDump occurs when the Assign method fails to dump
 	// the given data to the Tensor's storage.
-	ErrStorageDump = errors.New("nune/tensor: could not dump data buffer to storage")
+	ErrStorageDump = errors.New("nune: could not dump data buffer to storage")
 )
 
 // verifyGoodShape makes sure a shape isn't empty,

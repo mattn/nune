@@ -2,19 +2,25 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package tensor
+package nune
 
 import (
 	"fmt"
 	"math"
 	"reflect"
 	"strings"
-
-	"github.com/vorduin/nune"
 )
 
 // String returns a string representation of the Tensor.
 func (t Tensor[T]) String() string {
+	if t.Err != nil {
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return "Tensor(error)"
+		}
+	}
+
 	template := "Tensor({})"
 	f := newFmtState(template, t)
 
@@ -24,7 +30,7 @@ func (t Tensor[T]) String() string {
 }
 
 // fmtTensor formats the Tensor into a string.
-func fmtTensor[T nune.Number](t Tensor[T], s fmtState) string {
+func fmtTensor[T Number](t Tensor[T], s fmtState) string {
 	var b strings.Builder
 
 	if t.Rank() == 0 {
@@ -32,7 +38,7 @@ func fmtTensor[T nune.Number](t Tensor[T], s fmtState) string {
 	} else {
 		b.WriteString("[")
 
-		if t.Size(0) > nune.FmtConfig.Excerpt {
+		if t.Size(0) > FmtConfig.Excerpt {
 			b.WriteString(fmtExcerpted(t, s))
 		} else {
 			b.WriteString(fmtComplete(t, s))
@@ -45,12 +51,12 @@ func fmtTensor[T nune.Number](t Tensor[T], s fmtState) string {
 }
 
 // fmtNum formats a numeric type into a string.
-func fmtNum[T nune.Number](x T, s fmtState) string {
+func fmtNum[T Number](x T, s fmtState) string {
 	switch reflect.ValueOf(x).Kind() {
 	case reflect.Float32, reflect.Float64:
-		return fmt.Sprintf("%*.*f", s.width, nune.FmtConfig.Precision, float64(x))
+		return fmt.Sprintf("%*.*f", s.width, FmtConfig.Precision, float64(x))
 	case reflect.Uint8:
-		if nune.FmtConfig.Btoa {
+		if FmtConfig.Btoa {
 			return fmt.Sprintf("%s", string(byte(x)))
 		}
 		fallthrough
@@ -61,12 +67,12 @@ func fmtNum[T nune.Number](x T, s fmtState) string {
 
 // fmtExcerpted formats an excerpted representation of
 // a Tensor into a string.
-func fmtExcerpted[T nune.Number](t Tensor[T], s fmtState) string {
+func fmtExcerpted[T Number](t Tensor[T], s fmtState) string {
 	var b strings.Builder
 
 	var f string
 
-	f = fmtTensor(t.Slice(0, nune.FmtConfig.Excerpt/2), s)
+	f = fmtTensor(t.Slice(0, FmtConfig.Excerpt/2), s)
 	f = f[1 : len(f)-1]
 	b.WriteString(f)
 
@@ -79,7 +85,7 @@ func fmtExcerpted[T nune.Number](t Tensor[T], s fmtState) string {
 		b.WriteString(strings.Repeat(" ", s.pad+1))
 	}
 
-	f = fmtTensor(t.Slice(t.Size(0)-nune.FmtConfig.Excerpt/2, t.Size(0)), s)
+	f = fmtTensor(t.Slice(t.Size(0)-FmtConfig.Excerpt/2, t.Size(0)), s)
 	f = f[1 : len(f)-1]
 	b.WriteString(f)
 
@@ -88,7 +94,7 @@ func fmtExcerpted[T nune.Number](t Tensor[T], s fmtState) string {
 
 // fmtComplete formats a complete representation of
 // a Tensor into a string.
-func fmtComplete[T nune.Number](t Tensor[T], s fmtState) string {
+func fmtComplete[T Number](t Tensor[T], s fmtState) string {
 	var b strings.Builder
 
 	for i := 0; i < t.Size(0); i++ {
@@ -127,7 +133,7 @@ func (f fmtState) update() fmtState {
 
 // newFmtState returns a new fmtState configured to
 // a base Tensor representation.
-func newFmtState[T nune.Number](fmt string, t Tensor[T]) fmtState {
+func newFmtState[T Number](fmt string, t Tensor[T]) fmtState {
 	s := fmtState{
 		depth: 0,
 		esc:   t.Rank() - 1,
@@ -145,7 +151,7 @@ func cfgPad(s string) int {
 }
 
 // cfgWidth configures the numeric types' width from a given Tensor.
-func cfgWidth[T nune.Number](t Tensor[T]) int {
+func cfgWidth[T Number](t Tensor[T]) int {
 	// find min and max numbers
 	var min, max T = t.Min().Ravel()[0], t.Max().Ravel()[0]
 
@@ -155,9 +161,9 @@ func cfgWidth[T nune.Number](t Tensor[T]) int {
 
 	switch reflect.ValueOf(x).Kind() {
 	case reflect.Float32, reflect.Float64:
-		l = len(fmt.Sprintf("%.*f", nune.FmtConfig.Precision, float64(x)))
+		l = len(fmt.Sprintf("%.*f", FmtConfig.Precision, float64(x)))
 	case reflect.Uint8:
-		if nune.FmtConfig.Btoa {
+		if FmtConfig.Btoa {
 			l = 1
 		}
 		fallthrough

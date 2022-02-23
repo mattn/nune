@@ -2,15 +2,14 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package internal
+package nune
 
 import (
 	"sync"
-	"github.com/vorduin/nune"
 )
 
 // HandlePwise processes a pointwise operation accordingly.
-func HandlePwise[T nune.Number](in, out []T, f func(T) T, nCPU int) {
+func handlePwise[T Number](in, out []T, f func(T) T, nCPU int) {
 	var wg sync.WaitGroup
 
 	for i := 0; i < nCPU; i++ {
@@ -31,7 +30,7 @@ func HandlePwise[T nune.Number](in, out []T, f func(T) T, nCPU int) {
 }
 
 // HandleEwise processes an elementwise operation accordingly.
-func HandleEwise[T nune.Number](lhs, rhs, out []T, f func(T, T) T, nCPU int) {
+func handleEwise[T Number](lhs, rhs, out []T, f func(T, T) T, nCPU int) {
 	var wg sync.WaitGroup
 
 	for i := 0; i < nCPU; i++ {
@@ -52,7 +51,7 @@ func HandleEwise[T nune.Number](lhs, rhs, out []T, f func(T, T) T, nCPU int) {
 }
 
 // HandleSwise processes a slice reduction operation accordingly.
-func HandleSwise[T nune.Number](in []T, out *T, f func([]T) T, nCPU int) {
+func handleSwise[T Number](in []T, out *T, f func([]T) T, nCPU int) {
 	outBuf := make([]T, 0, nCPU)
 	ch := make(chan T, nCPU)
 

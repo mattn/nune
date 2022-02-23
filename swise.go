@@ -2,21 +2,24 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package tensor
-
-import (
-	// "github.com/vorduin/nune"
-	"github.com/vorduin/nune/internal"
-)
+package nune
 
 // Swise performs a reduction operation over all elements in the Tensor.
 // The reduction operation must be able to generelize and parallelize
 // since the operation might be multi-threaded if the Tensor is big enough,
 // unless explicitely disabled in Nune's environment configuration.
 func (t Tensor[T]) Swise(f func([]T) T) Tensor[T] {
+	if t.Err != nil {
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
+	}
+
 	var res T
-	internal.HandleSwise(t.Ravel(), &res, f, 1)
-	
+	handleSwise(t.Ravel(), &res, f, 1)
+
 	return Tensor[T]{
 		data: []T{res},
 	}

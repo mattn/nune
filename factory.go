@@ -2,19 +2,18 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package tensor
+package nune
 
 import (
 	"math"
 	"reflect"
 
-	"github.com/vorduin/nune"
 	"github.com/vorduin/slices"
 )
 
 // From returns a Tensor from the given backing - be it a numeric type,
 // a sequence, or nested sequences - with the corresponding shape.
-func From[T nune.Number](b any) Tensor[T] {
+func From[T Number](b any) Tensor[T] {
 	switch k := reflect.TypeOf(b).Kind(); k {
 	case reflect.String:
 		b = any([]byte(b.(string)))
@@ -29,7 +28,7 @@ func From[T nune.Number](b any) Tensor[T] {
 
 		d, s, err := unwrapAny[T](c, []int{len(c)})
 		if err != nil {
-			if nune.EnvConfig.Interactive {
+			if EnvConfig.Interactive {
 				panic(err)
 			} else {
 				return Tensor[T]{
@@ -39,8 +38,8 @@ func From[T nune.Number](b any) Tensor[T] {
 		}
 
 		return Tensor[T]{
-			data:    d,
-			shape:   s,
+			data:   d,
+			shape:  s,
 			stride: configStride(s),
 		}
 	default:
@@ -51,7 +50,7 @@ func From[T nune.Number](b any) Tensor[T] {
 		} else if c, ok := anyToTensor[T](b); ok {
 			return c
 		} else {
-			if nune.EnvConfig.Interactive {
+			if EnvConfig.Interactive {
 				panic(ErrUnwrapBacking)
 			} else {
 				return Tensor[T]{
@@ -64,10 +63,10 @@ func From[T nune.Number](b any) Tensor[T] {
 
 // Full returns a Tensor filled with the given value and
 // satisfying the given shape.
-func Full[T nune.Number](x T, shape []int) Tensor[T] {
+func Full[T Number](x T, shape []int) Tensor[T] {
 	err := verifyGoodShape(shape...)
 	if err != nil {
-		if nune.EnvConfig.Interactive {
+		if EnvConfig.Interactive {
 			panic(err)
 		} else {
 			return Tensor[T]{
@@ -82,28 +81,28 @@ func Full[T nune.Number](x T, shape []int) Tensor[T] {
 	}
 
 	return Tensor[T]{
-		data:    data,
-		shape:   slices.Copy(shape),
+		data:   data,
+		shape:  slices.Copy(shape),
 		stride: configStride(shape),
 	}
 }
 
 // Zeros returns a Tensor filled with zeros and satisfying the given shape.
-func Zeros[T nune.Number](shape ...int) Tensor[T] {
+func Zeros[T Number](shape ...int) Tensor[T] {
 	return Full(T(0), shape)
 }
 
 // Ones returns a Tensor filled with ones and satisfying the given shape.
-func Ones[T nune.Number](shape ...int) Tensor[T] {
+func Ones[T Number](shape ...int) Tensor[T] {
 	return Full(T(1), shape)
 }
 
 // Range returns a rank 1 Tensor on the interval [start, end),
 // and with the given step-size.
-func Range[T nune.Number](start, end, step int) Tensor[T] {
+func Range[T Number](start, end, step int) Tensor[T] {
 	err := verifyGoodStep(step, start, end)
 	if err != nil {
-		if nune.EnvConfig.Interactive {
+		if EnvConfig.Interactive {
 			panic(err)
 		} else {
 			return Tensor[T]{
@@ -123,8 +122,8 @@ func Range[T nune.Number](start, end, step int) Tensor[T] {
 	}
 
 	return Tensor[T]{
-		data:    rng,
-		shape:   []int{len(rng)},
+		data:   rng,
+		shape:  []int{len(rng)},
 		stride: configStride([]int{len(rng)}),
 	}
 }

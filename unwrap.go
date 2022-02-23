@@ -2,19 +2,18 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package tensor
+package nune
 
 import (
 	"reflect"
 
-	"github.com/vorduin/nune"
 	"github.com/vorduin/slices"
 )
 
 // unwrapAnySlice attempts to recursively unwrap a slice
 // or multiple nested slices of 'any' underlying type
 // into a 1-dimensional contiguous numeric slice.
-func unwrapAny[T nune.Number](s []any, shape []int) ([]T, []int, error) {
+func unwrapAny[T Number](s []any, shape []int) ([]T, []int, error) {
 	if len(s) == 0 {
 		return nil, nil, ErrUnwrapBacking
 	}
@@ -61,7 +60,7 @@ func anyIsNumeric(a any) bool {
 }
 
 // anyToNumeric casts an interface{} to the given numeric type.
-func anyToNumeric[T nune.Number](s ...any) []T {
+func anyToNumeric[T Number](s ...any) []T {
 	switch s[0].(type) {
 	case int:
 		return numericToNumeric[T, int](s)
@@ -93,7 +92,7 @@ func anyToNumeric[T nune.Number](s ...any) []T {
 }
 
 // numericToNumeric casts a numeric type to another numeric type.
-func numericToNumeric[T, U nune.Number](s []any) []T {
+func numericToNumeric[T, U Number](s []any) []T {
 	ns := slices.WithLen[T](len(s))
 	for i := 0; i < len(s); i++ {
 		ns[i] = T(s[i].(U))
@@ -104,7 +103,7 @@ func numericToNumeric[T, U nune.Number](s []any) []T {
 
 // anyToTensor attempts to cast an interface
 // to a Tensor of the given numeric type.
-func anyToTensor[T nune.Number](a any) (Tensor[T], bool) {
+func anyToTensor[T Number](a any) (Tensor[T], bool) {
 	switch a.(type) {
 	case Tensor[int]:
 		return Cast[T](a.(Tensor[int])), true

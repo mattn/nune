@@ -2,18 +2,21 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package tensor
+package nune
 
 import (
-	"github.com/vorduin/nune"
 	"github.com/vorduin/slices"
 )
 
 // Cast casts a Tensor's underlying type to the given numeric type.
-func Cast[T nune.Number, V nune.Number](t Tensor[V]) Tensor[T] {
+func Cast[T Number, V Number](t Tensor[V]) Tensor[T] {
 	if t.Err != nil {
-		return Tensor[T]{
-			Err: t.Err,
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return Tensor[T]{
+				Err: t.Err,
+			}
 		}
 	}
 
@@ -24,8 +27,8 @@ func Cast[T nune.Number, V nune.Number](t Tensor[V]) Tensor[T] {
 	}
 
 	return Tensor[T]{
-		data:  c,
-		shape:   t.shape,
+		data:   c,
+		shape:  t.shape,
 		stride: t.stride,
 		offset: t.offset,
 	}
@@ -34,12 +37,16 @@ func Cast[T nune.Number, V nune.Number](t Tensor[V]) Tensor[T] {
 // Clone clones the Tensor and its underlying view into its data buffer.
 func (t Tensor[T]) Clone() Tensor[T] {
 	if t.Err != nil {
-		return t
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
 	}
 
 	return Tensor[T]{
-		data: slices.Copy(t.Ravel()),
-		shape: slices.Copy(t.shape),
+		data:   slices.Copy(t.Ravel()),
+		shape:  slices.Copy(t.shape),
 		stride: slices.Copy(t.stride),
 	}
 }
@@ -48,18 +55,22 @@ func (t Tensor[T]) Clone() Tensor[T] {
 // TODO: Check stride
 func (t Tensor[T]) Reshape(shape ...int) Tensor[T] {
 	if t.Err != nil {
-		return t
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
 	}
 
 	if len(shape) == 0 && t.Numel() <= 1 {
 		return Tensor[T]{
-			data: t.data,
+			data:   t.data,
 			offset: t.offset,
 		}
 	} else {
 		err := verifyGoodShape(shape...)
 		if err != nil {
-			if nune.EnvConfig.Interactive {
+			if EnvConfig.Interactive {
 				panic(err)
 			} else {
 				t.Err = err
@@ -68,8 +79,8 @@ func (t Tensor[T]) Reshape(shape ...int) Tensor[T] {
 		}
 
 		return Tensor[T]{
-			data: t.data,
-			shape: slices.Copy(shape),
+			data:   t.data,
+			shape:  slices.Copy(shape),
 			stride: configStride(shape),
 			offset: t.offset,
 		}
@@ -80,12 +91,16 @@ func (t Tensor[T]) Reshape(shape ...int) Tensor[T] {
 // Multiple indices can be provided at the same time.
 func (t Tensor[T]) Index(indices ...int) Tensor[T] {
 	if t.Err != nil {
-		return t
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
 	}
 
 	err := verifyArgsBounds(len(indices), t.Rank())
 	if err != nil {
-		if nune.EnvConfig.Interactive {
+		if EnvConfig.Interactive {
 			panic(err)
 		} else {
 			t.Err = err
@@ -96,7 +111,7 @@ func (t Tensor[T]) Index(indices ...int) Tensor[T] {
 	for i, idx := range indices {
 		err = verifyAxisBounds(idx, t.Size(i))
 		if err != nil {
-			if nune.EnvConfig.Interactive {
+			if EnvConfig.Interactive {
 				panic(err)
 			} else {
 				t.Err = err
@@ -112,8 +127,8 @@ func (t Tensor[T]) Index(indices ...int) Tensor[T] {
 	}
 
 	return Tensor[T]{
-		data:    t.data,
-		shape:   slices.Copy(t.shape[len(indices):]),
+		data:   t.data,
+		shape:  slices.Copy(t.shape[len(indices):]),
 		stride: slices.Copy(t.stride[len(indices):]),
 		offset: offset,
 	}
@@ -122,12 +137,16 @@ func (t Tensor[T]) Index(indices ...int) Tensor[T] {
 // Slice returns a view over a slice of the Tensor.
 func (t Tensor[T]) Slice(start, end int) Tensor[T] {
 	if t.Err != nil {
-		return t
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
 	}
 
 	err := verifyGoodShape(t.shape...) // make sure Tensor rank is not 0
 	if err != nil {
-		if nune.EnvConfig.Interactive {
+		if EnvConfig.Interactive {
 			panic(err)
 		} else {
 			t.Err = err
@@ -137,7 +156,7 @@ func (t Tensor[T]) Slice(start, end int) Tensor[T] {
 
 	err = verifyGoodInterval(start, end, [2]int{0, t.Size(0)})
 	if err != nil {
-		if nune.EnvConfig.Interactive {
+		if EnvConfig.Interactive {
 			panic(err)
 		} else {
 			t.Err = err
@@ -150,21 +169,25 @@ func (t Tensor[T]) Slice(start, end int) Tensor[T] {
 	copy(shape[1:], t.shape[1:])
 
 	return Tensor[T]{
-		data:    t.data,
-		shape:   shape,
+		data:   t.data,
+		shape:  shape,
 		stride: slices.Copy(t.stride),
-		offset: t.offset+start*t.stride[0],
+		offset: t.offset + start*t.stride[0],
 	}
 }
 
 // Broadcast broadcasts the Tensor to the given shape.
 func (t Tensor[T]) Broadcast(shape ...int) Tensor[T] {
 	if t.Err != nil {
-		return t
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
 	}
 
 	if !t.Broadable(shape...) {
-		if nune.EnvConfig.Interactive {
+		if EnvConfig.Interactive {
 			panic(ErrNotBroadable)
 		} else {
 			t.Err = ErrNotBroadable
@@ -198,7 +221,7 @@ func (t Tensor[T]) Broadcast(shape ...int) Tensor[T] {
 			for i := 0; i < expansion; i++ {
 				for j := 0; j < t.Numel()/expandedStride[axis]; j++ {
 					for k := 0; k < shape[axis]; k++ {
-						dstIdx := i * stride + j * shape[axis] + k * newStride[axis]
+						dstIdx := i*stride + j*shape[axis] + k*newStride[axis]
 						srcIdx := j * expandedStride[axis]
 
 						copy(data[dstIdx:dstIdx+newStride[axis]], t.Ravel()[srcIdx:srcIdx+expandedStride[axis]])
@@ -212,8 +235,8 @@ func (t Tensor[T]) Broadcast(shape ...int) Tensor[T] {
 	}
 
 	return Tensor[T]{
-		data: data,
-		shape: slices.Copy(shape),
+		data:   data,
+		shape:  slices.Copy(shape),
 		stride: newStride,
 	}
 }
@@ -221,7 +244,11 @@ func (t Tensor[T]) Broadcast(shape ...int) Tensor[T] {
 // Reverse reverses the order of the elements of the Tensor.
 func (t Tensor[T]) Reverse() Tensor[T] {
 	if t.Err != nil {
-		return t
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
 	}
 
 	for i, j := 0, t.Numel()-1; i < j; i, j = i+1, j-1 {
@@ -231,15 +258,19 @@ func (t Tensor[T]) Reverse() Tensor[T] {
 	return t
 }
 
-// Permute permutes the Tensor's axes without changing the data. 
+// Permute permutes the Tensor's axes without changing the data.
 func (t Tensor[T]) Permute(axes ...int) Tensor[T] {
 	if t.Err != nil {
-		return t
+		if EnvConfig.Interactive {
+			panic(t.Err)
+		} else {
+			return t
+		}
 	}
 
 	err := verifyArgsBounds(len(axes), len(t.shape))
 	if err != nil {
-		if nune.EnvConfig.Interactive {
+		if EnvConfig.Interactive {
 			panic(err)
 		} else {
 			t.Err = err
@@ -253,7 +284,7 @@ func (t Tensor[T]) Permute(axes ...int) Tensor[T] {
 	for i, axis := range axes {
 		err := verifyAxisBounds(axis, len(t.shape))
 		if err != nil {
-			if nune.EnvConfig.Interactive {
+			if EnvConfig.Interactive {
 				panic(err)
 			} else {
 				t.Err = err
