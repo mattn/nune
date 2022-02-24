@@ -245,12 +245,11 @@ func (t Tensor[T]) Broadcast(shape ...int) Tensor[T] {
 		}
 	}
 
-	t.data = data
-	t.shape = slices.Clone(shape)
-	t.stride = newStride
-	t.offset = 0
-
-	return t
+	return Tensor[T]{
+		data: data,
+		shape: slices.Clone(shape),
+		stride: newStride,
+	}
 }
 
 // Reverse reverses the order of the elements of the Tensor.
@@ -328,12 +327,11 @@ func (t Tensor[T]) Repeat(n int) Tensor[T] {
 	stride[0] = t.shape[0] * t.stride[0]
 	copy(stride[1:], t.stride)
 
-	t.data = data
-	t.shape = shape
-	t.stride = stride
-	t.offset = 0
-
-	return t
+	return Tensor[T]{
+		data: data,
+		shape: shape,
+		stride: stride,
+	}
 }
 
 // Permute permutes the Tensor's axes without changing the data.
@@ -359,6 +357,9 @@ func (t Tensor[T]) Permute(axes ...int) Tensor[T] {
 	shapeCopy := slices.Clone(t.shape)
 	strideCopy := slices.Clone(t.stride)
 
+	newshape := slices.WithLen[int](len(t.shape))
+	newstride := slices.WithLen[int](len(t.stride))
+
 	for i, axis := range axes {
 		err := verifyAxisBounds(axis, len(t.shape))
 		if err != nil {
@@ -370,11 +371,16 @@ func (t Tensor[T]) Permute(axes ...int) Tensor[T] {
 			}
 		}
 
-		t.shape[i] = shapeCopy[axis]
-		t.stride[i] = strideCopy[axis]
+		newshape[i] = shapeCopy[axis]
+		newstride[i] = strideCopy[axis]
 	}
 
-	return t
+	return Tensor[T]{
+		data: t.data,
+		shape: newshape,
+		stride: newstride,
+		offset: t.offset,
+	}
 }
 
 // Cat concatenates the other Tensor to this Tensor along the given axis.
@@ -433,12 +439,11 @@ func (t Tensor[T]) Cat(other Tensor[T], axis int) Tensor[T] {
 		copy(data[i*ns*newshape[axis]+ts*t.shape[axis]:(i+1)*ns*newshape[axis]], other.Ravel()[i*os*other.shape[axis]:(i+1)*os*other.shape[axis]])
 	}
 
-	t.data = data
-	t.shape = newshape
-	t.stride = newstride
-	t.offset = 0
-
-	return t
+	return Tensor[T]{
+		data: data,
+		shape: newshape,
+		stride: newstride,
+	}
 }
 
 // Stack stacks this and the other Tensor together along a new axis.
@@ -473,7 +478,6 @@ func (t Tensor[T]) Stack(other Tensor[T], axis int) Tensor[T] {
 	t = t.Unsqueeze(axis)
 	other = other.Unsqueeze(axis)
 	t = t.Cat(other, axis)
-	other = other.Squeeze(axis)
 
 	return t
 }
@@ -515,10 +519,12 @@ func (t Tensor[T]) Squeeze(axis int) Tensor[T] {
 	copy(newstride[:axis], t.stride[:axis])
 	copy(newstride[axis:], t.stride[axis+1:])
 
-	t.shape = newshape
-	t.stride = newstride
-
-	return t
+	return Tensor[T]{
+		data: t.data,
+		shape: newshape,
+		stride: newstride,
+		offset: t.offset,
+	}
 }
 
 // Unsqueeze adds an axis of dimensions 1 to the Tensor's shape.
@@ -556,8 +562,10 @@ func (t Tensor[T]) Unsqueeze(axis int) Tensor[T] {
 		newstride[axis] = 1
 	}
 
-	t.shape = newshape
-	t.stride = newstride
-
-	return t
+	return Tensor[T]{
+		data: t.data,
+		shape: newshape,
+		stride: newstride,
+		offset: t.offset,
+	}
 }

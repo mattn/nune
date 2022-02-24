@@ -26,7 +26,7 @@ func handleReduce[T Number](in []T, out *T, f func([]T) T, nCPU int) {
 }
 
 // Reduce performs a reduction operation over all elements in the Tensor.
-// The reduction operation must be able to generelize and parallelize
+// The reduction operation must be able to generalize and parallelize
 // since the operation might be multi-threaded if the Tensor is big enough,
 // unless explicitely disabled in Nune's environment configuration.
 func (t Tensor[T]) Reduce(f func([]T) T) Tensor[T] {

@@ -19,7 +19,7 @@ func handleElementwise[T Number](lhs, rhs, out []T, f func(T, T) T, nCPU int) {
 
 		wg.Add(1)
 		go func(lhsBuf, rhsBuf, outBuf []T) {
-			for j := 0; j < len(lhs); j++ {
+			for j := 0; j < len(lhsBuf); j++ {
 				outBuf[j] = f(lhsBuf[j], rhsBuf[j])
 			}
 
