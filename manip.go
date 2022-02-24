@@ -282,8 +282,12 @@ func (t Tensor[T]) Flip(axis int) Tensor[T] {
 	}
 
 	stride := t.stride[axis]
-	for i, j := 0, t.shape[axis]; i < j; i, j = i+1, j-1 {
-		t.data[t.offset+i*stride], t.data[t.offset+j*stride] = t.data[t.offset+j*stride], t.data[t.offset+i*stride]
+	for i := 0; i < t.Numel(); i += t.shape[axis] * stride {
+		for j, k := 0, t.shape[axis]-1; j < k; j, k = j+1, k-1 {
+			for l := 0; l < t.stride[axis]; l++ {
+				t.data[t.offset+i+j*stride+l], t.data[t.offset+i+k*stride+l] = t.data[t.offset+i+k*stride+l], t.data[t.offset+i+j*stride+l]
+			}
+		}
 	}
 
 	return t
@@ -311,7 +315,7 @@ func (t Tensor[T]) Repeat(n int) Tensor[T] {
 
 	shape[0] = n
 	copy(shape[1:], t.shape)
-	stride[0] = n * t.stride[0]
+	stride[0] = t.shape[0] * t.stride[0]
 	copy(stride[1:], t.stride)
 
 	t.data = data
@@ -401,18 +405,33 @@ func (t Tensor[T]) Cat(other Tensor[T], axis int) Tensor[T] {
 		}
 	}
 
-	data := slices.WithLen[T](t.Numel() + other.Numel())
-	copy(data[:t.Numel()], t.Ravel())
-	copy(data[t.Numel():], other.Ravel())
+	newshape := slices.Copy(t.shape)
+	newshape[axis] += other.shape[axis]
+	newstride := configStride(newshape)
 
-	t.shape[axis] += other.shape[axis]
-	t.stride = configStride(t.shape)
+	ts := t.stride[axis]
+	os := other.stride[axis]
+	ns := newstride[axis]
+	data := slices.WithLen[T](t.Numel() + other.Numel())
+
+	// how do I come up with these algorithms...
+	for i := 0; i < t.Numel()/(ts*t.shape[axis]); i++ {
+		copy(data[i*ns*newshape[axis]:i*ns*newshape[axis]+ts*t.shape[axis]], t.Ravel()[i*ts*t.shape[axis]:(i+1)*ts*t.shape[axis]])
+	}
+
+	for i := 0; i < other.Numel()/(os*other.shape[axis]); i++ {
+		copy(data[i*ns*newshape[axis]+ts*t.shape[axis]:(i+1)*ns*newshape[axis]], other.Ravel()[i*os*other.shape[axis]:(i+1)*os*other.shape[axis]])
+	}
+
+	t.data = data
+	t.shape = newshape
+	t.stride = newstride
 	t.offset = 0
 
 	return t
 }
 
-// Stack stacks the other Tensor to this Tensor along a new axis.
+// Stack stacks this and the other Tensor together along a new axis.
 func (t Tensor[T]) Stack(other Tensor[T], axis int) Tensor[T] {
 	if t.Err != nil {
 		if EnvConfig.Interactive {
@@ -518,10 +537,15 @@ func (t Tensor[T]) Unsqueeze(axis int) Tensor[T] {
 	copy(newshape[:axis], t.shape[:axis])
 	copy(newstride[:axis], t.stride[:axis])
 	newshape[axis] = 1
-	newstride[axis] = t.stride[axis]
-	copy(newshape[axis+1:], t.shape[axis:])
-	copy(newstride[axis+1:], t.stride[axis:])
 
+	if axis < len(t.shape) {
+		copy(newshape[axis+1:], t.shape[axis:])
+		copy(newstride[axis+1:], t.stride[axis:])
+		newstride[axis] = t.shape[axis] * t.stride[axis]
+	} else {
+		newstride[axis] = 1
+	}
+	
 	t.shape = newshape
 	t.stride = newstride
 
