@@ -5,8 +5,30 @@
 package nune
 
 import (
+	"sync"
 	"github.com/vorduin/slices"
 )
+
+// handleElementwise processes an elementwise operation accordingly.
+func handleElementwise[T Number](lhs, rhs, out []T, f func(T, T) T, nCPU int) {
+	var wg sync.WaitGroup
+
+	for i := 0; i < nCPU; i++ {
+		min := (i * len(lhs) / nCPU)
+		max := ((i + 1) * len(lhs)) / nCPU
+
+		wg.Add(1)
+		go func(lhsBuf, rhsBuf, outBuf []T) {
+			for j := 0; j < len(lhs); j++ {
+				outBuf[j] = f(lhsBuf[j], rhsBuf[j])
+			}
+
+			wg.Done()
+		}(lhs[min:max], rhs[min:max], out[min:max])
+	}
+
+	wg.Wait()
+}
 
 // midwayBroadcast adjusts the first shape so that the second shape might
 // be broadcastable to it. For example, for the shape [4, 1] to be
@@ -35,7 +57,7 @@ func midwayBroadcast(s1, s2 []int) []int {
 }
 
 // Elementwise performs an elementwise operation
-// between other and the elements of this Tensor.
+// between other and this Tensor.
 func (t Tensor[T]) Elementwise(other any, f func(T, T) T) Tensor[T] {
 	if t.Err != nil {
 		if EnvConfig.Interactive {
@@ -74,13 +96,14 @@ func (t Tensor[T]) Elementwise(other any, f func(T, T) T) Tensor[T] {
 		}
 	}
 
-	handleElementwise(t.Ravel(), o.Ravel(), t.Ravel(), f, EnvConfig.NumCPU)
+	// TODO: Fix if the Tensor was permutated.
+	handleElementwise(t.Ravel(), o.Ravel(), t.Ravel(), f, configCPU(t.Numel()))
 
 	return t
 }
 
 // Add takes a value and performs elementwise addition
-// between other and the elements of this Tensor.
+// between other and this Tensor.
 func (t Tensor[T]) Add(other any) Tensor[T] {
 	return t.Elementwise(other, func(x, y T) T {
 		return x + y
@@ -88,7 +111,7 @@ func (t Tensor[T]) Add(other any) Tensor[T] {
 }
 
 // Sub takes a value and performs elementwise subtraction
-// between other and the elements of this Tensor.
+// between other and this Tensor.
 func (t Tensor[T]) Sub(other any) Tensor[T] {
 	return t.Elementwise(other, func(x, y T) T {
 		return x - y
@@ -96,7 +119,7 @@ func (t Tensor[T]) Sub(other any) Tensor[T] {
 }
 
 // Mul takes a value and performs elementwise multiplication
-// between other and the elements of this Tensor.
+// between other and this Tensor.
 func (t Tensor[T]) Mul(other any) Tensor[T] {
 	return t.Elementwise(other, func(x, y T) T {
 		return x * y
@@ -104,7 +127,7 @@ func (t Tensor[T]) Mul(other any) Tensor[T] {
 }
 
 // Div takes a value and performs elementwise division
-// between other and the elements of this Tensor.
+// between other and this Tensor.
 func (t Tensor[T]) Div(other any) Tensor[T] {
 	return t.Elementwise(other, func(x, y T) T {
 		return x / y

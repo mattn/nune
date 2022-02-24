@@ -20,11 +20,15 @@ func (t Tensor[T]) Scalar() T {
 		panic("nune: tensor is not rank 0")
 	}
 
-	return t.data[0]
+	return t.data[t.offset]
 }
 
 // Numel returns the number of elements in the Tensor's data buffer.
 func (t Tensor[T]) Numel() int {
+	if len(t.shape) == 0 {
+		return 1
+	}
+
 	return int(slices.Prod(t.shape))
 }
 

@@ -4,6 +4,27 @@
 
 package nune
 
+// handleReduce processes a slice reduction operation accordingly.
+func handleReduce[T Number](in []T, out *T, f func([]T) T, nCPU int) {
+	outBuf := make([]T, 0, nCPU)
+	ch := make(chan T, nCPU)
+
+	for i := 0; i < nCPU; i++ {
+		min := (i * len(in) / nCPU)
+		max := ((i + 1) * len(in)) / nCPU
+
+		go func(inBuf []T, c chan<- T) {
+			c <- f(inBuf)
+		}(in[min:max], ch)
+	}
+
+	for i := 0; i < nCPU; i++ {
+		outBuf = append(outBuf, <-ch)
+	}
+
+	*out = f(outBuf)
+}
+
 // Reduce performs a reduction operation over all elements in the Tensor.
 // The reduction operation must be able to generelize and parallelize
 // since the operation might be multi-threaded if the Tensor is big enough,
@@ -18,7 +39,7 @@ func (t Tensor[T]) Reduce(f func([]T) T) Tensor[T] {
 	}
 
 	var res T
-	handleReduce(t.Ravel(), &res, f, EnvConfig.NumCPU)
+	handleReduce(t.Ravel(), &res, f, configCPU(t.Numel()))
 
 	return Tensor[T]{
 		data: []T{res},

@@ -4,17 +4,13 @@
 
 package nune
 
-import (
-	"runtime"
-)
-
 // EnvConfig holds Nune's environment configuration.
 var EnvConfig = struct {
 	Interactive bool // whether the environment is interactive (panics) or not
-	NumCPU      int // the number of CPUs to use
+	NumCPU      int // the number of CPUs to use. A value of 0 means auto
 }{
 	Interactive: false,
-	NumCPU:      runtime.NumCPU(),
+	NumCPU:      0,
 }
 
 // FmtConfig holds Nune's formatting configuration.

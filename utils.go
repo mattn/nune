@@ -4,7 +4,11 @@
 
 package nune
 
-import "github.com/vorduin/slices"
+import (
+	"math"
+	"runtime"
+	"github.com/vorduin/slices"
+)
 
 // configStride returns the corresponding stride to the given shape.
 func configStride(shape []int) []int {
@@ -20,4 +24,22 @@ func configStride(shape []int) []int {
 	}
 
 	return nil
+}
+
+// configCPU returns the number of CPU cores to use 
+// depending on the data's size.
+func configCPU(size int) int {
+	if EnvConfig.NumCPU != 0 {
+		return int(math.Min(float64(size), float64(EnvConfig.NumCPU)))
+	}
+
+	bias := float64(size) / 4096 // this is handcoded, therefore beautiful. or ugly
+
+	if bias < 1 {
+		return 1
+	} else if bias < float64(runtime.NumCPU()) {
+		return int(math.Round(bias))
+	} else {
+		return runtime.NumCPU()
+	}
 }
