@@ -82,7 +82,7 @@ func Full[T Number](x T, shape []int) Tensor[T] {
 
 	return Tensor[T]{
 		data:   data,
-		shape:  slices.Copy(shape),
+		shape:  slices.Clone(shape),
 		stride: configStride(shape),
 	}
 }
@@ -97,7 +97,7 @@ func FullLike[T Number, U Number](x T, other Tensor[U]) Tensor[T] {
 
 	return Tensor[T]{
 		data:   data,
-		shape:  slices.Copy(other.shape),
+		shape:  slices.Clone(other.shape),
 		stride: configStride(other.shape),
 	}
 }
@@ -116,8 +116,8 @@ func Zeros[T Number](shape ...int) Tensor[T] {
 	}
 
 	return Tensor[T]{
-		data: slices.WithLen[T](int(slices.Prod(shape))),
-		shape: slices.Copy(shape),
+		data:   slices.WithLen[T](int(slices.Prod(shape))),
+		shape:  slices.Clone(shape),
 		stride: configStride(shape),
 	}
 }
@@ -131,8 +131,8 @@ func Ones[T Number](shape ...int) Tensor[T] {
 // Tensor's shape.
 func ZerosLike[T Number, U Number](other Tensor[U]) Tensor[T] {
 	return Tensor[T]{
-		data: slices.WithLen[T](other.Numel()),
-		shape: slices.Copy(other.shape),
+		data:   slices.WithLen[T](other.Numel()),
+		shape:  slices.Clone(other.shape),
 		stride: configStride(other.shape),
 	}
 }
@@ -171,8 +171,8 @@ func Range[T Number](start, end, step int) Tensor[T] {
 // FromBuffer returns a Tensor with the given buffer set as its data buffer.
 func FromBuffer[T Number](buf []T) Tensor[T] {
 	return Tensor[T]{
-		data: buf,
-		shape: []int{len(buf)},
+		data:   buf,
+		shape:  []int{len(buf)},
 		stride: configStride([]int{len(buf)}),
 	}
 }

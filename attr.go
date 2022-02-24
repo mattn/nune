@@ -10,7 +10,7 @@ import (
 
 // Ravel returns the Tensor's view in its data buffer.
 func (t Tensor[T]) Ravel() []T {
-	return t.data[t.offset:t.offset+t.Numel()]
+	return t.data[t.offset : t.offset+t.Numel()]
 }
 
 // Scalar returns the scalar equivalent of a rank 0 Tensor.
@@ -19,7 +19,7 @@ func (t Tensor[T]) Scalar() T {
 	if len(t.shape) != 0 {
 		panic("nune: tensor is not rank 0")
 	}
-	
+
 	return t.data[0]
 }
 
@@ -36,12 +36,12 @@ func (t Tensor[T]) Rank() int {
 
 // Shape returns a copy of the Tensor's shape.
 func (t Tensor[T]) Shape() []int {
-	return slices.Copy(t.shape)
+	return slices.Clone(t.shape)
 }
 
 // Stride returns a copy of the Tensor's stride scheme.
 func (t Tensor[T]) Stride() []int {
-	return slices.Copy(t.stride)
+	return slices.Clone(t.stride)
 }
 
 // Stride returns the Tensor's view offset in its data buffer.

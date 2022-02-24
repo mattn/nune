@@ -4,11 +4,11 @@
 
 package nune
 
-// Swise performs a reduction operation over all elements in the Tensor.
+// Reduce performs a reduction operation over all elements in the Tensor.
 // The reduction operation must be able to generelize and parallelize
 // since the operation might be multi-threaded if the Tensor is big enough,
 // unless explicitely disabled in Nune's environment configuration.
-func (t Tensor[T]) Swise(f func([]T) T) Tensor[T] {
+func (t Tensor[T]) Reduce(f func([]T) T) Tensor[T] {
 	if t.Err != nil {
 		if EnvConfig.Interactive {
 			panic(t.Err)
@@ -18,7 +18,7 @@ func (t Tensor[T]) Swise(f func([]T) T) Tensor[T] {
 	}
 
 	var res T
-	handleSwise(t.Ravel(), &res, f, 1)
+	handleReduce(t.Ravel(), &res, f, EnvConfig.NumCPU)
 
 	return Tensor[T]{
 		data: []T{res},
@@ -27,7 +27,7 @@ func (t Tensor[T]) Swise(f func([]T) T) Tensor[T] {
 
 // Min returns the minimum value of all elements in the Tensor.
 func (t Tensor[T]) Min() Tensor[T] {
-	return t.Swise(func(s []T) T {
+	return t.Reduce(func(s []T) T {
 		min := s[0]
 		for i := 1; i < len(s); i++ {
 			if s[i] < min {
@@ -40,7 +40,7 @@ func (t Tensor[T]) Min() Tensor[T] {
 
 // Max returns the maximum value of all elements in the Tensor.
 func (t Tensor[T]) Max() Tensor[T] {
-	return t.Swise(func(s []T) T {
+	return t.Reduce(func(s []T) T {
 		max := s[0]
 		for i := 1; i < len(s); i++ {
 			if s[i] > max {
@@ -53,7 +53,7 @@ func (t Tensor[T]) Max() Tensor[T] {
 
 // Mean returns the mean value of all elements in the Tensor.
 func (t Tensor[T]) Mean() Tensor[T] {
-	return t.Swise(func(s []T) T {
+	return t.Reduce(func(s []T) T {
 		var sum T
 		for i := 0; i < len(s); i++ {
 			sum += s[i]
@@ -64,7 +64,7 @@ func (t Tensor[T]) Mean() Tensor[T] {
 
 // Sum returns the sum of all elements in the Tensor.
 func (t Tensor[T]) Sum() Tensor[T] {
-	return t.Swise(func(s []T) T {
+	return t.Reduce(func(s []T) T {
 		var sum T
 		for i := 0; i < len(s); i++ {
 			sum += s[i]
@@ -75,7 +75,7 @@ func (t Tensor[T]) Sum() Tensor[T] {
 
 // Prod returns the product of all elements in the Tensor.
 func (t Tensor[T]) Prod() Tensor[T] {
-	return t.Swise(func(s []T) T {
+	return t.Reduce(func(s []T) T {
 		var prod T = 1
 		for i := 0; i < len(s); i++ {
 			prod *= s[i]

@@ -8,8 +8,8 @@ import (
 	"sync"
 )
 
-// HandlePwise processes a pointwise operation accordingly.
-func handlePwise[T Number](in, out []T, f func(T) T, nCPU int) {
+// handlePointwise processes a pointwise operation accordingly.
+func handlePointwise[T Number](in, out []T, f func(T) T, nCPU int) {
 	var wg sync.WaitGroup
 
 	for i := 0; i < nCPU; i++ {
@@ -29,8 +29,8 @@ func handlePwise[T Number](in, out []T, f func(T) T, nCPU int) {
 	wg.Wait()
 }
 
-// HandleEwise processes an elementwise operation accordingly.
-func handleEwise[T Number](lhs, rhs, out []T, f func(T, T) T, nCPU int) {
+// handleElementwise processes an elementwise operation accordingly.
+func handleElementwise[T Number](lhs, rhs, out []T, f func(T, T) T, nCPU int) {
 	var wg sync.WaitGroup
 
 	for i := 0; i < nCPU; i++ {
@@ -50,8 +50,8 @@ func handleEwise[T Number](lhs, rhs, out []T, f func(T, T) T, nCPU int) {
 	wg.Wait()
 }
 
-// HandleSwise processes a slice reduction operation accordingly.
-func handleSwise[T Number](in []T, out *T, f func([]T) T, nCPU int) {
+// handleReduce processes a slice reduction operation accordingly.
+func handleReduce[T Number](in []T, out *T, f func([]T) T, nCPU int) {
 	outBuf := make([]T, 0, nCPU)
 	ch := make(chan T, nCPU)
 

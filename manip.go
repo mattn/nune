@@ -47,14 +47,13 @@ func (t Tensor[T]) Clone() Tensor[T] {
 	}
 
 	return Tensor[T]{
-		data:   slices.Copy(t.Ravel()),
-		shape:  slices.Copy(t.shape),
-		stride: slices.Copy(t.stride),
+		data:   slices.Clone(t.Ravel()),
+		shape:  slices.Clone(t.shape),
+		stride: slices.Clone(t.stride),
 	}
 }
 
 // Reshape modifies the Tensor's indexing scheme.
-// TODO: Check stride
 func (t Tensor[T]) Reshape(shape ...int) Tensor[T] {
 	if t.Err != nil {
 		if EnvConfig.Interactive {
@@ -79,11 +78,21 @@ func (t Tensor[T]) Reshape(shape ...int) Tensor[T] {
 				return t
 			}
 		}
+		
+		newstride := slices.WithLen[int](len(shape))
+		if len(shape) <= len(t.shape) {
+			copy(newstride, t.stride[len(t.stride)-len(shape):])
+		} else {
+			copy(newstride[len(shape)-len(t.stride):], t.stride)
+			for i := len(shape)-len(t.stride)-1; i >= 0; i-- {
+				newstride[i] = shape[i+1] * newstride[i+1]
+			}
+		}
 
 		return Tensor[T]{
 			data:   t.data,
-			shape:  slices.Copy(shape),
-			stride: configStride(shape),
+			shape:  slices.Clone(shape),
+			stride: newstride,
 			offset: t.offset,
 		}
 	}
@@ -130,8 +139,8 @@ func (t Tensor[T]) Index(indices ...int) Tensor[T] {
 
 	return Tensor[T]{
 		data:   t.data,
-		shape:  slices.Copy(t.shape[len(indices):]),
-		stride: slices.Copy(t.stride[len(indices):]),
+		shape:  slices.Clone(t.shape[len(indices):]),
+		stride: slices.Clone(t.stride[len(indices):]),
 		offset: offset,
 	}
 }
@@ -173,7 +182,7 @@ func (t Tensor[T]) Slice(start, end int) Tensor[T] {
 	return Tensor[T]{
 		data:   t.data,
 		shape:  shape,
-		stride: slices.Copy(t.stride),
+		stride: slices.Clone(t.stride),
 		offset: t.offset + start*t.stride[0],
 	}
 }
@@ -236,11 +245,12 @@ func (t Tensor[T]) Broadcast(shape ...int) Tensor[T] {
 		}
 	}
 
-	return Tensor[T]{
-		data:   data,
-		shape:  slices.Copy(shape),
-		stride: newStride,
-	}
+	t.data = data
+	t.shape = slices.Clone(shape)
+	t.stride = newStride
+	t.offset = 0
+
+	return t
 }
 
 // Reverse reverses the order of the elements of the Tensor.
@@ -346,8 +356,8 @@ func (t Tensor[T]) Permute(axes ...int) Tensor[T] {
 		}
 	}
 
-	shapeCopy := slices.Copy(t.shape)
-	strideCopy := slices.Copy(t.stride)
+	shapeCopy := slices.Clone(t.shape)
+	strideCopy := slices.Clone(t.stride)
 
 	for i, axis := range axes {
 		err := verifyAxisBounds(axis, len(t.shape))
@@ -405,7 +415,7 @@ func (t Tensor[T]) Cat(other Tensor[T], axis int) Tensor[T] {
 		}
 	}
 
-	newshape := slices.Copy(t.shape)
+	newshape := slices.Clone(t.shape)
 	newshape[axis] += other.shape[axis]
 	newstride := configStride(newshape)
 
@@ -497,8 +507,8 @@ func (t Tensor[T]) Squeeze(axis int) Tensor[T] {
 		}
 	}
 
-	newshape := slices.WithLen[int](len(t.shape)-1)
-	newstride := slices.WithLen[int](len(t.stride)-1)
+	newshape := slices.WithLen[int](len(t.shape) - 1)
+	newstride := slices.WithLen[int](len(t.stride) - 1)
 
 	copy(newshape[:axis], t.shape[:axis])
 	copy(newshape[axis:], t.shape[axis+1:])
@@ -531,8 +541,8 @@ func (t Tensor[T]) Unsqueeze(axis int) Tensor[T] {
 		}
 	}
 
-	newshape := slices.WithLen[int](len(t.shape)+1)
-	newstride := slices.WithLen[int](len(t.stride)+1)
+	newshape := slices.WithLen[int](len(t.shape) + 1)
+	newstride := slices.WithLen[int](len(t.stride) + 1)
 
 	copy(newshape[:axis], t.shape[:axis])
 	copy(newstride[:axis], t.stride[:axis])
@@ -545,7 +555,7 @@ func (t Tensor[T]) Unsqueeze(axis int) Tensor[T] {
 	} else {
 		newstride[axis] = 1
 	}
-	
+
 	t.shape = newshape
 	t.stride = newstride
 
