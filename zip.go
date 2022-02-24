@@ -9,8 +9,8 @@ import (
 	"github.com/vorduin/slices"
 )
 
-// handleElementwise processes an elementwise operation accordingly.
-func handleElementwise[T Number](lhs, rhs, out []T, f func(T, T) T, nCPU int) {
+// handleZip processes an elementwise operation accordingly.
+func handleZip[T Number](lhs, rhs, out []T, f func(T, T) T, nCPU int) {
 	var wg sync.WaitGroup
 
 	for i := 0; i < nCPU; i++ {
@@ -56,9 +56,9 @@ func midwayBroadcast(s1, s2 []int) []int {
 	return s
 }
 
-// Elementwise performs an elementwise operation
+// Zip performs an elementwise operation
 // between other and this Tensor.
-func (t Tensor[T]) Elementwise(other any, f func(T, T) T) Tensor[T] {
+func (t Tensor[T]) Zip(other any, f func(T, T) T) Tensor[T] {
 	if t.Err != nil {
 		if EnvConfig.Interactive {
 			panic(t.Err)
@@ -97,7 +97,7 @@ func (t Tensor[T]) Elementwise(other any, f func(T, T) T) Tensor[T] {
 	}
 
 	// TODO: Fix if the Tensor was permutated.
-	handleElementwise(t.Ravel(), o.Ravel(), t.Ravel(), f, configCPU(t.Numel()))
+	handleZip(t.Ravel(), o.Ravel(), t.Ravel(), f, configCPU(t.Numel()))
 
 	return t
 }
@@ -105,7 +105,7 @@ func (t Tensor[T]) Elementwise(other any, f func(T, T) T) Tensor[T] {
 // Add takes a value and performs elementwise addition
 // between other and this Tensor.
 func (t Tensor[T]) Add(other any) Tensor[T] {
-	return t.Elementwise(other, func(x, y T) T {
+	return t.Zip(other, func(x, y T) T {
 		return x + y
 	})
 }
@@ -113,7 +113,7 @@ func (t Tensor[T]) Add(other any) Tensor[T] {
 // Sub takes a value and performs elementwise subtraction
 // between other and this Tensor.
 func (t Tensor[T]) Sub(other any) Tensor[T] {
-	return t.Elementwise(other, func(x, y T) T {
+	return t.Zip(other, func(x, y T) T {
 		return x - y
 	})
 }
@@ -121,7 +121,7 @@ func (t Tensor[T]) Sub(other any) Tensor[T] {
 // Mul takes a value and performs elementwise multiplication
 // between other and this Tensor.
 func (t Tensor[T]) Mul(other any) Tensor[T] {
-	return t.Elementwise(other, func(x, y T) T {
+	return t.Zip(other, func(x, y T) T {
 		return x * y
 	})
 }
@@ -129,7 +129,7 @@ func (t Tensor[T]) Mul(other any) Tensor[T] {
 // Div takes a value and performs elementwise division
 // between other and this Tensor.
 func (t Tensor[T]) Div(other any) Tensor[T] {
-	return t.Elementwise(other, func(x, y T) T {
+	return t.Zip(other, func(x, y T) T {
 		return x / y
 	})
 }
