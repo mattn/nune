@@ -8,6 +8,7 @@ This package provides facilities to manipulate and perform various operations on
 - [Installation](#Installation)
 - [Philosophy](#Philosophy)
 - [Design](#Design)
+- [Performance](#Performance)
 - [Usage](#Usage)
 - [Roadmap](#Roadmap)
 - [License](#License)
@@ -33,6 +34,23 @@ Nune tries to expose a clear, minimal, yet expressive API. This has two conseque
 First off, Nune represents all tensor data densely, as a contiguous 1-dimensional buffer in memory. In order to keep a minimum memory overhead, all tensor operations that do not alter the data return views over the tensor's data buffer. For example, indexing, reshaping or permutating a tensor simply alter the tensor's indexing scheme over the same data buffer, without making any copies. This both saves memory and provies a really efficient way to manipulate the tensor.
 
 Next up is how Nune performs operations on a tensor. The simplest and most efficient design was to provide all operations as methods of the tensor, all of which are computed inplace. In case a certain operation shouldn't affect the original data, a simple `Clone` method can be called, returning a completely identical tensor, with a copy of the underlying data. All tensor operations are written to work in a functional style.
+
+## Performance
+Nune is a high performance numerical engine. However, high performance is subject to a lot of factors, many of which differ from machine to machine.
+Therefore, a number of benchmarks have been written and can be run using the `go test` command, where Nune's performance can then be compared to that of other libraries on that particular machine.
+
+However, to provide an idea of Nune's capabilities, here is a table showcasing Nune's performances compared to NumPy's and PyTorch's on the same machine, with Nune running in single-threaded mode (couldn't find out if NumPy and PyTorch are running single-threaded though), all operating on a Tensor with 1e7 elements with a type of float64:
+
+|      | Nune | NumPy | PyTorch |
+|------|------|-------|---------|
+| Min  |  3ms | 5ms   | 5ms     |
+| Prod | 3ms  | 10ms  | 5ms     |
+| Div  | 45ms | 15ms  | 10ms    |
+| Abs  | 10ms | 25ms  | 20ms    |
+| Sqrt | 12ms | 40ms  | 20ms    |
+| Tanh | 50ms | 55ms  | 65ms    |
+
+As can be concluded, Nune is exceptionally fast on pointwise and reduction operations, but is still somewhat slower on operations that are SIMD accelerated by its counterparts. This is of course to be improved in the future, as the library is still not optimized for maximum performance on all operations.
 
 ## Usage
 ```Go
