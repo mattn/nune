@@ -112,7 +112,7 @@ func main() {
 	})
 
 	// or you could use nune's functional API
-	res = t.Mul(-1).Exp().Add(1).Pow(-1)
+	res = t.Copysign(-1).Exp().Add(1).Pow(-1)
 	// in the above chain, if nune is running
 	// in a non-interactive environment and
 	// one operation fails, all subsequent
