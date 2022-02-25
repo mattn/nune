@@ -320,7 +320,7 @@ func (t Tensor[T]) NaN() Tensor[T] {
 
 // Nextafter computes the next representable float64 value after x towards y,
 // where x is each element in the Tensor.
-func (t Tensor[T]) Nexafter(y float64) Tensor[T] {
+func (t Tensor[T]) Nextafter(y float64) Tensor[T] {
 	return t.Map(func(x T) T {
 		return T(math.Nextafter(float64(x), y))
 	})
@@ -328,7 +328,7 @@ func (t Tensor[T]) Nexafter(y float64) Tensor[T] {
 
 // Nextafter32 computes the next representable float32 value after x towards y,
 // where x is each element in the Tensor.
-func (t Tensor[T]) Nexafter32(y float32) Tensor[T] {
+func (t Tensor[T]) Nextafter32(y float32) Tensor[T] {
 	return t.Map(func(x T) T {
 		return T(math.Nextafter32(float32(x), y))
 	})

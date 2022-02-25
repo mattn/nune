@@ -6,78 +6,35 @@ package nune_test
 
 import (
 	"testing"
-
-	"github.com/vorduin/nune"
 )
 
-func BenchmarkAdd1e8Procs1(b *testing.B) {
-	nune.EnvConfig.NumCPU = 1
-	tensor := nune.Range[float64](0, 1e8, 1)
+func BenchmarkAdd(b *testing.B) {
+	tensor := newTensor()
 
-	benchmarkMilli(b, func() {
+	benchmarkOp(b, func() {
 		tensor.Add(tensor)
 	})
 }
+func BenchmarkSub(b *testing.B) {
+	tensor := newTensor()
 
-func BenchmarkAdd1e8ProcsN(b *testing.B) {
-	nune.EnvConfig.NumCPU = 0
-	tensor := nune.Range[float64](0, 1e8, 1)
-
-	benchmarkMilli(b, func() {
-		tensor.Add(tensor)
-	})
-}
-
-func BenchmarkSub1e8Procs1(b *testing.B) {
-	nune.EnvConfig.NumCPU = 1
-	tensor := nune.Range[float64](0, 1e8, 1)
-
-	benchmarkMilli(b, func() {
+	benchmarkOp(b, func() {
 		tensor.Sub(tensor)
 	})
 }
 
-func BenchmarkSub1e8ProcsN(b *testing.B) {
-	nune.EnvConfig.NumCPU = 0
-	tensor := nune.Range[float64](0, 1e8, 1)
+func BenchmarkMul(b *testing.B) {
+	tensor := newTensor()
 
-	benchmarkMilli(b, func() {
-		tensor.Sub(tensor)
-	})
-}
-
-func BenchmarkMul1e8Procs1(b *testing.B) {
-	nune.EnvConfig.NumCPU = 1
-	tensor := nune.Range[float64](0, 1e8, 1)
-
-	benchmarkMilli(b, func() {
+	benchmarkOp(b, func() {
 		tensor.Mul(tensor)
 	})
 }
 
-func BenchmarkMul1e8ProcsN(b *testing.B) {
-	nune.EnvConfig.NumCPU = 0
-	tensor := nune.Range[float64](0, 1e8, 1)
+func BenchmarkDiv(b *testing.B) {
+	tensor := newTensor()
 
-	benchmarkMilli(b, func() {
-		tensor.Mul(tensor)
-	})
-}
-
-func BenchmarkDiv1e8Procs1(b *testing.B) {
-	nune.EnvConfig.NumCPU = 1
-	tensor := nune.Range[float64](0, 1e8, 1)
-
-	benchmarkMilli(b, func() {
-		tensor.Div(tensor)
-	})
-}
-
-func BenchmarkDiv1e8ProcsN(b *testing.B) {
-	nune.EnvConfig.NumCPU = 0
-	tensor := nune.Range[float64](0, 1e8, 1)
-
-	benchmarkMilli(b, func() {
+	benchmarkOp(b, func() {
 		tensor.Div(tensor)
 	})
 }

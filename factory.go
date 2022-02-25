@@ -122,11 +122,6 @@ func Zeros[T Number](shape ...int) Tensor[T] {
 	}
 }
 
-// Ones returns a Tensor full with ones and satisfying the given shape.
-func Ones[T Number](shape ...int) Tensor[T] {
-	return Full(T(1), shape)
-}
-
 // ZerosLike returns a Tensor full with zeros and resembling the other
 // Tensor's shape.
 func ZerosLike[T Number, U Number](other Tensor[U]) Tensor[T] {
@@ -135,6 +130,17 @@ func ZerosLike[T Number, U Number](other Tensor[U]) Tensor[T] {
 		shape:  slices.Clone(other.shape),
 		stride: configStride(other.shape),
 	}
+}
+
+// Ones returns a Tensor full with ones and satisfying the given shape.
+func Ones[T Number](shape ...int) Tensor[T] {
+	return Full(T(1), shape)
+}
+
+// OnesLike returns a Tensor full with ones and resembling the other
+// Tensor's shape.
+func OnesLike[T Number, U Number](other Tensor[U]) Tensor[T] {
+	return FullLike(T(1), other)
 }
 
 // Range returns a rank 1 Tensor on the interval [start, end),
@@ -170,6 +176,17 @@ func Range[T Number](start, end, step int) Tensor[T] {
 
 // FromBuffer returns a Tensor with the given buffer set as its data buffer.
 func FromBuffer[T Number](buf []T) Tensor[T] {
+	err := verifyGoodShape(len(buf))
+	if err != nil {
+		if EnvConfig.Interactive {
+			panic(err)
+		} else {
+			return Tensor[T]{
+				Err: err,
+			}
+		}
+	}
+
 	return Tensor[T]{
 		data:   buf,
 		shape:  []int{len(buf)},
