@@ -94,7 +94,7 @@ func main() {
 
  // Operations between two tensors automatically
  // broadcast the tensor's together
- // here the two tensor's shapes are (4, 25, 1) and (4),
+ // here the two tensors' shapes are (4, 25, 1) and (4),
  // so the resulting shape ends up being (4, 25, 4)
  _ = t.Clone().Reshape(4, 25, 1).Add([]int{1, 2, 3, 4}).Permute(1, 0, 2)
 
@@ -121,7 +121,7 @@ func main() {
  })
 
  // or you could use nune's functional API
- res = t.Mul(-1).Exp().Add(1).Pow(-1)
+ res = t.Copysign(-1).Exp().Add(1).Pow(-1)
  // in the above chain, if nune is running
  // in a non-interactive environment and
  // one operation fails, all subsequent
