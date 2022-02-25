@@ -20,7 +20,7 @@ After installing Go1.18, simply run this in your terminal...
 ```
 go get github.com/vorduin/nune
 ```
-and you're good to Go!
+... and you're good to Go!
 
 ## Philosophy
 Nune follows Go's principles and design philosophies of simplicity and minimalism.
@@ -78,7 +78,7 @@ func main() {
 	}
 
 	// or interactively, such as working in
-	// notebooks environment
+	// a notebooks environment
 	nune.EnvConfig.Interactive = true
 
 	// The following line automatically panics
@@ -112,6 +112,12 @@ func main() {
 	//         ...,
 	//         [1.58, 1.58, ..., 1.93, 2.54]
 	//         [1.58, 1.58, ..., 1.93, 2.54]])
+	
+	// and much more!
+	// Nune impelements most of the "math" package
+	// as Tensor methods, many tensor manipulation functions,
+	// and facilities to facilitate and speed up working
+	// with and operating on numerical data.
 }
 ```
 
